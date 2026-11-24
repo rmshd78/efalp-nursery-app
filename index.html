@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>EFALP Nurseries · Plant Management</title>
+<link rel="icon" href="logo.png">
+<style>
+:root{
+  --g900:#0f4d2a;--g800:#146b3a;--g700:#1b7a3e;--g600:#2e9d4a;--g400:#8dc63f;--g100:#e8f4e4;--g50:#f4f8f2;
+  --ink:#1d2b22;--ink2:#4b5a50;--ink3:#7d8a81;--line:#dfe7dc;--card:#fff;
+  --warn:#b26a00;--warnbg:#fff4e0;--bad:#b42318;--badbg:#fdecea;--ok:#1b7a3e;--okbg:#e6f4ea;--info:#1f5fa8;--infobg:#e8f0fb;
+  --r:10px;--shadow:0 1px 2px rgba(16,40,24,.06),0 2px 8px rgba(16,40,24,.05);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font:14px/1.45 "Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;color:var(--ink);background:var(--g50)}
+a{color:var(--g700)}
+button,input,select,textarea{font:inherit;color:inherit}
+.hidden{display:none!important}
+/* layout */
+#app{display:flex;min-height:100vh}
+#side{width:232px;flex:none;background:var(--g800);color:#fff;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+#side .brand{background:#fff;padding:14px 16px;display:flex;align-items:center;gap:10px;border-bottom:4px solid var(--g400)}
+#side .brand img{width:52px;height:52px;object-fit:contain}
+#side .brand b{display:block;color:var(--g800);font-size:15px;letter-spacing:.3px}
+#side .brand span{color:var(--ink3);font-size:11.5px}
+#side nav{padding:10px 8px;flex:1;overflow:auto}
+#side nav a{display:flex;align-items:center;gap:10px;color:#dcefe0;text-decoration:none;padding:9px 12px;border-radius:8px;margin:1px 0;font-weight:500}
+#side nav a:hover{background:rgba(255,255,255,.08);color:#fff}
+#side nav a.on{background:#fff;color:var(--g800)}
+#side nav .sep{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:#9fcaa9;padding:14px 12px 4px}
+#side nav svg{width:18px;height:18px;flex:none}
+#side .me{padding:12px 16px;border-top:1px solid rgba(255,255,255,.12);font-size:12.5px}
+#side .me b{display:block;font-size:13.5px}
+#side .me button{margin-top:8px;background:transparent;border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px}
+#main{flex:1;min-width:0;display:flex;flex-direction:column}
+#top{display:flex;align-items:center;gap:12px;padding:12px 24px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+#top h1{font-size:18px;margin:0;font-weight:650;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#menuBtn{display:none;border:0;background:none;padding:4px;cursor:pointer}
+#live{font-size:12px;color:var(--ink3);display:flex;align-items:center;gap:6px;white-space:nowrap}
+#live i{width:8px;height:8px;border-radius:50%;background:var(--g600);display:inline-block;box-shadow:0 0 0 3px #d6eedc}
+#live.err i{background:var(--bad);box-shadow:0 0 0 3px #f6d5d2}
+#view{padding:22px 24px 60px;max-width:1400px;width:100%}
+/* components */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:16px 18px}
+.card h3{margin:0 0 12px;font-size:14.5px;font-weight:650}
+.card h3 small{font-weight:400;color:var(--ink3);margin-left:6px}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:16px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;box-shadow:var(--shadow)}
+.kpi .l{font-size:12px;color:var(--ink2);font-weight:500}
+.kpi .v{font-size:26px;font-weight:700;margin-top:2px;letter-spacing:-.3px;color:var(--g900)}
+.kpi .s{font-size:12px;color:var(--ink3)}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:#fff;padding:7px 13px;border-radius:8px;cursor:pointer;font-weight:550;white-space:nowrap;text-decoration:none;color:var(--ink)}
+.btn:hover{border-color:#c4d3c0;background:#fbfdfb}
+.btn.pri{background:var(--g700);border-color:var(--g700);color:#fff}
+.btn.pri:hover{background:var(--g800)}
+.btn.danger{color:var(--bad);border-color:#f0c9c5}
+.btn.danger:hover{background:var(--badbg)}
+.btn.sm{padding:4px 9px;font-size:12.5px}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.btn svg{width:16px;height:16px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px}
+.bar .grow{flex:1}
+input.in,select.in,textarea.in{border:1px solid #cfdacb;border-radius:8px;padding:7px 10px;background:#fff;min-width:0;width:100%}
+input.in:focus,select.in:focus,textarea.in:focus{outline:2px solid #bfe3c8;border-color:var(--g600)}
+.search{position:relative;flex:1;min-width:220px}
+.search input{padding-left:34px}
+.search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--ink3)}
+.bar select.in{width:auto;max-width:200px}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;font-weight:600;background:var(--g100);color:var(--g800);white-space:nowrap}
+.pill.loc-DHAD{background:#e9f0fb;color:#1f4f8a}
+.h-Excellent,.h-Good{background:var(--okbg);color:var(--ok)}
+.h-Fair{background:var(--infobg);color:var(--info)}
+.h-Weak{background:var(--warnbg);color:var(--warn)}
+.h-Diseased,.h-Dead{background:var(--badbg);color:var(--bad)}
+table.t{width:100%;border-collapse:collapse;background:#fff}
+table.t th,table.t td{text-align:left;padding:8px 10px;border-bottom:1px solid #edf1eb;vertical-align:middle}
+table.t th{font-size:12px;color:var(--ink2);font-weight:600;background:#f8faf7;position:sticky;top:0;cursor:pointer;user-select:none;white-space:nowrap}
+table.t tbody tr:hover{background:#f6faf5;cursor:pointer}
+table.t td.num,table.t th.num{text-align:right;font-variant-numeric:tabular-nums}
+.tablewrap{border:1px solid var(--line);border-radius:var(--r);overflow:auto;box-shadow:var(--shadow);background:#fff}
+.thumb{width:38px;height:38px;border-radius:6px;object-fit:cover;background:var(--g100);display:block}
+.thumb.ph{display:flex;align-items:center;justify-content:center;color:#a8c3ad}
+.muted{color:var(--ink3)}.small{font-size:12.5px}
+.mono{font-family:Consolas,"SF Mono",Menlo,monospace;font-size:12.5px}
+.pager{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-top:10px;color:var(--ink2);font-size:13px}
+/* charts */
+.hbar{display:grid;grid-template-columns:minmax(90px,170px) 1fr auto;gap:6px 10px;align-items:center;font-size:13px}
+.hbar .lab{color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hbar .trk{height:14px;position:relative}
+.hbar .fill{height:14px;background:var(--g600);border-radius:0 4px 4px 0;min-width:2px}
+.hbar .fill:hover{background:var(--g800)}
+.hbar .val{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:600;text-align:right}
+.vbars{display:flex;align-items:flex-end;gap:4px;height:170px;padding-top:8px;border-bottom:1px solid var(--line)}
+.vbars .col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0}
+.vbars .col .f{width:100%;max-width:34px;background:var(--g600);border-radius:4px 4px 0 0;min-height:2px}
+.vbars .col:hover .f{background:var(--g800)}
+.vbars .col span{font-size:11px;color:var(--ink);font-weight:600;margin-bottom:2px}
+.vlabels{display:flex;gap:4px;margin-top:4px}
+.vlabels span{flex:1;font-size:10.5px;color:var(--ink3);text-align:center;min-width:0;overflow:hidden;white-space:nowrap}
+/* plant detail */
+.dhead{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:16px}
+.dhead h2{margin:0;font-size:22px}
+.dhead .sub{color:var(--ink2);margin-top:2px}
+.dl{display:grid;grid-template-columns:minmax(120px,170px) 1fr;gap:6px 14px;font-size:13.5px}
+.dl dt{color:var(--ink3)}
+.dl dd{margin:0;word-break:break-word}
+.qrbox{text-align:center}
+.qrbox .q{width:200px;height:200px;margin:0 auto;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.qrbox .q svg{width:100%;height:100%;display:block}
+.sizes{display:flex;flex-wrap:wrap;gap:8px}
+.sizes div{border:1px solid var(--line);border-radius:8px;padding:6px 10px;text-align:center;min-width:82px;background:#fbfdfb}
+.sizes b{display:block;font-size:17px;color:var(--g900)}
+.sizes span{font-size:11.5px;color:var(--ink3)}
+.rep{border-top:1px solid var(--line);padding:14px 0}
+.rep:first-child{border-top:0;padding-top:0}
+.rep .meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--ink2)}
+.rep p{margin:6px 0 8px;white-space:pre-wrap}
+.photos{display:flex;flex-wrap:wrap;gap:8px}
+.photos img{width:110px;height:110px;object-fit:cover;border-radius:8px;cursor:zoom-in;background:var(--g100);border:1px solid var(--line)}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.pgrid .pc{background:#fff;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;cursor:pointer;box-shadow:var(--shadow)}
+.pgrid .pc img{width:100%;height:140px;object-fit:cover;display:block;background:var(--g100)}
+.pgrid .pc div{padding:8px 10px;font-size:12.5px}
+/* forms */
+.form{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px 16px}
+.form label{display:block;font-size:12.5px;font-weight:600;color:var(--ink2);margin-bottom:4px}
+.form .full{grid-column:1/-1}
+.req{color:var(--bad)}
+.fgroup{margin-bottom:18px}
+.fgroup h4{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:var(--g700)}
+.sizegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:8px}
+.sizegrid label{font-size:11.5px}
+/* modal */
+.modal-bg{position:fixed;inset:0;background:rgba(10,30,18,.45);z-index:50;display:flex;align-items:flex-start;justify-content:center;padding:40px 14px;overflow:auto}
+.modal{background:#fff;border-radius:12px;width:100%;max-width:640px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.modal.wide{max-width:900px}
+.modal header{display:flex;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line)}
+.modal header h3{margin:0;flex:1;font-size:16px}
+.modal .body{padding:16px 18px}
+.modal footer{padding:12px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}
+.x{border:0;background:none;font-size:22px;cursor:pointer;color:var(--ink3);line-height:1}
+#lightbox{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:60;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;padding:20px}
+#lightbox img{max-width:100%;max-height:85vh;border-radius:6px}
+#lightbox a{color:#fff;font-size:13px}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:70;display:flex;flex-direction:column;gap:8px;align-items:center}
+#toast div{background:var(--ink);color:#fff;padding:10px 16px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.25);font-size:13.5px;max-width:90vw}
+#toast div.err{background:var(--bad)}
+.notice{padding:10px 14px;border-radius:8px;background:var(--warnbg);color:#6b4100;border:1px solid #f3dcae;margin-bottom:14px;font-size:13.5px}
+.empty{padding:40px;text-align:center;color:var(--ink3)}
+/* splash */
+#splash{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,var(--g800),var(--g900));padding:20px}
+#splash .box{background:#fff;border-radius:16px;padding:32px 34px;max-width:440px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+#splash img{width:130px}
+#splash h2{margin:14px 0 4px;color:var(--g800)}
+#splash p{color:var(--ink2);margin:6px 0 18px}
+.spin{width:28px;height:28px;border:3px solid var(--g100);border-top-color:var(--g600);border-radius:50%;animation:sp 0.8s linear infinite;margin:10px auto}
+@keyframes sp{to{transform:rotate(360deg)}}
+.ms{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer}
+/* labels print */
+.labels{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.label{border:1px dashed #9db5a3;border-radius:8px;padding:10px;display:flex;gap:10px;align-items:center;page-break-inside:avoid;background:#fff}
+.label .q{width:110px;height:110px;flex:none}
+.label .q svg{width:100%;height:100%}
+.label b{display:block;font-size:12.5px;white-space:nowrap}
+.label .lg{width:30px;display:block;margin-bottom:4px}
+.label div{font-size:11px;line-height:1.35;min-width:0}
+@media (max-width:900px){
+  #side{position:fixed;left:-250px;z-index:40;transition:left .2s;box-shadow:0 0 40px rgba(0,0,0,.3)}
+  #side.open{left:0}
+  #menuBtn{display:block}
+  #view{padding:14px 12px 60px}
+  #top{padding:10px 12px}
+  .g2,.g3{grid-template-columns:1fr}
+  .labels{grid-template-columns:repeat(2,1fr)}
+  .hide-m{display:none}
+  .dl{grid-template-columns:120px 1fr}
+}
+@media print{
+  #side,#top,.noprint,#toast{display:none!important}
+  body{background:#fff}
+  #view{padding:0;max-width:none}
+  .card,.tablewrap,.kpi{box-shadow:none}
+  .labels{grid-template-columns:repeat(3,1fr)}
+}
+</style>
+</head>
+<body>
+<div id="splash"><div class="box">
+  <img src="logo.png" alt="EFALP Nurseries">
+  <h2>EFALP Nurseries</h2>
+  <div class="muted">Plant Stock &amp; QR Management</div>
+  <div id="splashMsg"><div class="spin"></div><p>Loading…</p></div>
+</div></div>
+
+<div id="app" class="hidden">
+  <aside id="side">
+    <div class="brand"><img src="logo.png" alt=""><div><b id="coName">EFALP Nurseries</b><span>Plant Management</span></div></div>
+    <nav id="nav"></nav>
+    <div class="me"><b id="meName"></b><span id="meRole"></span><br><button onclick="signOut()">Sign out</button></div>
+  </aside>
+  <div id="main">
+    <div id="top">
+      <button id="menuBtn" onclick="document.getElementById('side').classList.toggle('open')" aria-label="Menu"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+      <h1 id="title">Dashboard</h1>
+      <div id="live" title="Changes by other users appear automatically"><i></i><span>Connecting…</span></div>
+    </div>
+    <div id="view"></div>
+  </div>
+</div>
+<div id="modalRoot"></div>
+<div id="toast"></div>
+
+<script src="config.js"></script>
+<script src="qrcode.js"></script>
+<script>
+"use strict";
+/* =====================================================================
+   EFALP Nurseries · Plant Management
+   Database = Supabase (Postgres + Auth + Storage), plain REST calls
+   ===================================================================== */
+const CFG = Object.assign({refreshSeconds: 5}, window.EFALP_CONFIG || {});
+const FIXED = {barcode: "Barcode", location: "Location", total: "Total Qty", by: "Updated By", at: "Updated At"};
+const ROLES = {superadmin: "Super Admin", manager: "Manager", engineer: "Engineer"};
+const CAN = {
+  superadmin: {edit: 1, del: 1, report: 1, delReport: 1, fields: 1, users: 1, settings: 1, activity: 1},
+  manager:    {edit: 1, del: 1, report: 1, delReport: 1, activity: 1},
+  engineer:   {edit: 1, report: 1}
+};
+const S = {me: null, role: null, tables: {}, fields: [], settings: {}, locations: [], bands: [], health: [],
+  photos: {}, ids: {}, view: {}, lastSync: null, sig: {}, editing: false, tick: 0};
+
+/* ---------------- small helpers ---------------- */
+const $ = s => document.querySelector(s);
+const esc = v => String(v == null ? "" : v).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+const num = v => { const n = parseFloat(String(v).replace(/,/g, "")); return isFinite(n) ? n : 0; };
+const fmt = n => Math.round(n).toLocaleString("en-US");
+const fmtAED = n => "AED " + Number(n).toLocaleString("en-US", {maximumFractionDigits: 0});
+const today = () => new Date().toISOString().slice(0, 10);
+const nowStr = () => { const d = new Date(), p = x => String(x).padStart(2, "0"); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; };
+const can = k => !!(CAN[S.role] || {})[k];
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function toast(msg, err) { const d = document.createElement("div"); if (err) d.className = "err"; d.textContent = msg; $("#toast").appendChild(d); setTimeout(() => d.remove(), err ? 7000 : 3500); }
+function excelDate(v) {
+  if (typeof v === "number" && v > 20000 && v < 80000) return new Date(Math.round((v - 25569) * 86400000)).toISOString().slice(0, 10);
+  return v == null ? "" : String(v);
+}
+function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function lsSet(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} }
+function ssGet(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }
+function ssSet(k, v) { try { v == null ? sessionStorage.removeItem(k) : sessionStorage.setItem(k, v); } catch (e) {} }
+const ICON = {
+  dash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>',
+  plant: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22V10"/><path d="M12 10C12 6 9 3 4 3c0 5 3 7 8 7z"/><path d="M12 13c0-4 3-7 8-7 0 5-3 7-8 7z"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>',
+  cam: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
+  qr: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"/></svg>',
+  cols: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15 4v16"/></svg>',
+  users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+  log: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="9"/></svg>',
+  gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+  search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>',
+  dl: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>',
+  xl: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 8l8 8M16 8l-8 8"/></svg>',
+  print: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>',
+  edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
+  trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>',
+  leaf: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/><path d="M2 21c0-3 1.85-5.36 5.08-6"/></svg>'
+};
+
+/* =====================================================================
+   SUPABASE – sign-in, database and photo storage (plain REST calls)
+   ===================================================================== */
+const SB = String(CFG.supabaseUrl || "").trim().replace(/\/+$/, ""), KEY = String(CFG.supabaseKey || "").trim();
+const REDIRECT = location.origin + location.pathname;
+let SESSION = null; try { SESSION = JSON.parse(lsGet("efalp_sb")); } catch (e) {}
+function saveSession(j) {
+  SESSION = j ? {access: j.access_token, refresh: j.refresh_token, exp: Date.now() + ((+j.expires_in || 3600) - 60) * 1000,
+    user: j.user ? {id: j.user.id, email: j.user.email} : (SESSION && SESSION.user) || null} : null;
+  lsSet("efalp_sb", SESSION ? JSON.stringify(SESSION) : null);
+  return SESSION;
+}
+function authMsg(m) {
+  m = String(m || "");
+  if (/invalid login|invalid_credentials/i.test(m)) return "Wrong email or password.";
+  if (/not confirmed/i.test(m)) return "Please confirm your email first: open the confirmation link we emailed you.";
+  if (/already registered|already exists/i.test(m)) return "This email already has an account. Use Sign in or Forgot password.";
+  if (/rate limit/i.test(m)) return "Too many attempts. Please wait a minute and try again.";
+  return m;
+}
+async function authCall(path, body, method = "POST", token) {
+  const headers = {apikey: KEY, "Content-Type": "application/json"}; if (token) headers.Authorization = "Bearer " + token;
+  const r = await fetch(SB + "/auth/v1/" + path, {method, headers, body: method === "GET" ? undefined : JSON.stringify(body || {})});
+  const t = await r.text(); let j = {}; try { j = t ? JSON.parse(t) : {}; } catch (e) {}
+  if (!r.ok) throw new Error(authMsg(j.error_description || j.msg || j.message || j.error_code || j.error || r.statusText));
+  return j;
+}
+let refreshing = null;
+async function getToken() {
+  if (!SESSION || !SESSION.access) throw new Error("NOT_SIGNED_IN");
+  if (Date.now() < SESSION.exp) return SESSION.access;
+  if (!refreshing) refreshing = authCall("token?grant_type=refresh_token", {refresh_token: SESSION.refresh}).then(saveSession).finally(() => refreshing = null);
+  try { await refreshing; return SESSION.access; } catch (e) { saveSession(null); throw new Error("NOT_SIGNED_IN"); }
+}
+function friendlyErr(m) {
+  m = String(m || "");
+  if (/row-level security|permission denied|42501/i.test(m)) return "You don't have permission to do this.";
+  if (/duplicate key|already exists/i.test(m)) return "This record already exists.";
+  if (/JWT expired/i.test(m)) return "Session expired, please sign in again.";
+  if (/Failed to fetch|NetworkError/i.test(m)) return "No internet connection. Please try again.";
+  return m;
+}
+async function api(path, opt = {}, retried) {
+  const token = await getToken();
+  const headers = Object.assign({apikey: KEY, Authorization: "Bearer " + token}, opt.headers || {});
+  let body = opt.body;
+  if (body !== undefined && !(body instanceof Blob) && typeof body !== "string") { body = JSON.stringify(body); headers["Content-Type"] = "application/json"; }
+  let r;
+  try { r = await fetch(SB + path, {method: opt.method || "GET", headers, body}); }
+  catch (e) { throw new Error(friendlyErr(e.message)); }
+  if (r.status === 401 && !retried) { SESSION.exp = 0; return api(path, opt, true); }
+  const t = await r.text(); let j = null; try { j = t ? JSON.parse(t) : null; } catch (e) { j = t; }
+  if (!r.ok) { const e = new Error(friendlyErr((j && (j.message || j.error_description || j.msg || j.error)) || r.statusText)); e.status = r.status; throw e; }
+  return j;
+}
+const enc = encodeURIComponent;
+const rest = (q, opt) => api("/rest/v1/" + q, opt);
+const RET = {Prefer: "return=representation"};
+async function selectAll(table, q) {
+  let out = [], from = 0; const page = 1000;
+  for (;;) {
+    const rows = await rest(`${table}?${q}`, {headers: {"Range-Unit": "items", Range: `${from}-${from + page - 1}`}});
+    out = out.concat(rows || []); if (!rows || rows.length < page) break; from += page;
+  }
+  return out;
+}
+
+/* ---- DB rows <-> app records ---- */
+function fmtTs(v) { if (!v) return ""; const d = new Date(v); if (isNaN(d)) return String(v); const p = x => String(x).padStart(2, "0"); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; }
+function plantFromRow(r) {
+  const p = {}, sz = r.sizes || {}, d = r.data || {};
+  S.fields.forEach(f => p[f.col] = "");
+  Object.keys(d).forEach(k => p[k] = d[k] == null ? "" : d[k]);
+  p[FIXED.barcode] = r.barcode; p[FIXED.location] = r.location; p[FIXED.by] = r.updated_by || ""; p[FIXED.at] = fmtTs(r.updated_at);
+  S.bands.forEach(b => p[b + " cm"] = sz[b] == null ? "" : sz[b]);
+  p._total = S.bands.reduce((s, b) => s + num(sz[b]), 0) || num(r.total); p[FIXED.total] = p._total;
+  p._ts = r.updated_at; p._data = r.data || {}; p._sizes = sz;
+  return p;
+}
+function rowFromPlant(c, base) {
+  const data = Object.assign({}, base || {}), sizes = {};
+  S.fields.forEach(f => { if (!(f.col in c)) return; const v = c[f.col]; if (v === "" || v == null) delete data[f.col]; else data[f.col] = v; });
+  S.bands.forEach(b => { const v = c[b + " cm"]; if (v !== "" && v != null && num(v) > 0) sizes[b] = Math.round(num(v)); });
+  return {barcode: c[FIXED.barcode], location: c[FIXED.location], data, sizes, total: Object.values(sizes).reduce((a, b) => a + b, 0),
+    updated_by: S.me.name, updated_at: new Date().toISOString()};
+}
+const reportFromRow = r => ({"Report ID": r.id, Barcode: r.barcode, Date: r.date || "", Health: r.health || "", Note: r.note || "",
+  _photos: r.photos || [], "Created By": r.created_by || "", "Created At": fmtTs(r.created_at), _by: r.created_by_id});
+
+/* ---- loading & live sync ---- */
+S.raw = {plants: [], reports: [], fields: [], settings: [], profiles: [], activity: []}; S.ver = {};
+const LOADERS = {
+  plants:   () => selectAll("plants", "select=*&order=barcode"),
+  reports:  () => selectAll("reports", "select=*&order=created_at"),
+  fields:   () => selectAll("fields", "select=*&order=sort,col"),
+  settings: () => selectAll("settings", "select=*"),
+  profiles: () => selectAll("profiles", "select=*&order=created_at"),
+  activity: () => rest("activity?select=*&order=id.desc&limit=500").then(r => (r || []).reverse())
+};
+function buildAll() {
+  const st = {}; S.raw.settings.forEach(r => st[r.key] = r.value == null ? "" : String(r.value)); S.settings = st;
+  S.locations = (st["Locations"] || "ALRH=Al Raheeb Nursery;DHAD=Dhadna Nursery").split(";").map(x => x.split("=")).filter(x => x[0] && x[0].trim()).map(x => ({code: x[0].trim(), name: (x[1] || x[0]).trim()}));
+  S.bands = (st["Size Bands"] || "0-50;51-100;101-150;151-200;201-250;251-300;301-350;351-400").split(";").map(s => s.trim()).filter(Boolean);
+  S.health = (st["Health Options"] || "Excellent;Good;Fair;Weak;Diseased;Dead").split(";").map(s => s.trim()).filter(Boolean);
+  S.fields = S.raw.fields.map(r => ({col: r.col, label: r.label || r.col, type: String(r.type || "text").toLowerCase(), group: r.grp || "Other",
+    options: String(r.options || "").split(";").map(s => s.trim()).filter(Boolean), qr: !!r.show_in_qr, list: !!r.show_in_list, req: !!r.required,
+    order: num(r.sort), active: r.active !== false, exists: true})).sort((a, b) => a.order - b.order || a.col.localeCompare(b.col));
+  $("#coName").textContent = st["Company Name"] || "EFALP Nurseries";
+  S.tables.Plants = {headers: [FIXED.barcode, FIXED.location].concat(S.fields.map(f => f.col), S.bands.map(b => b + " cm"), [FIXED.total, FIXED.by, FIXED.at]),
+    rows: S.raw.plants.map(plantFromRow)};
+  S.tables.Reports = {rows: S.raw.reports.map(reportFromRow)};
+  S.tables.Activity = {rows: S.raw.activity.map(a => ({Time: fmtTs(a.ts), User: a.user_name || "", Action: a.action || "", Target: a.target || "", Details: a.details || ""}))};
+  S.tables.Users = {rows: S.raw.profiles.map(u => ({id: u.id, Email: u.email, Name: u.name || u.email, role: u.role, Role: ROLES[u.role] || "Waiting for approval", Active: u.active ? "Yes" : "No", created: fmtTs(u.created_at)}))};
+  if (S.me) { const me = S.raw.profiles.find(u => u.id === S.me.id); if (me) { S.me.name = me.name || S.me.email; if (me.role !== S.role || !me.active) setTimeout(() => location.reload(), 300); } }
+}
+const plants = () => (S.tables.Plants || {rows: []}).rows;
+const reports = () => (S.tables.Reports || {rows: []}).rows;
+const locName = c => (S.locations.find(l => l.code === c) || {name: c}).name;
+async function loadAll(first) {
+  const ver = await rest("sync_state?select=tbl,version") || [];
+  const names = first ? Object.keys(LOADERS) : ver.filter(v => LOADERS[v.tbl] && S.ver[v.tbl] !== v.version).map(v => v.tbl);
+  const res = await Promise.all(names.map(n => LOADERS[n]()));
+  names.forEach((n, i) => S.raw[n] = res[i]);
+  ver.forEach(v => S.ver[v.tbl] = v.version);
+  if (names.length) buildAll();
+  S.lastSync = new Date(); setLive(true);
+  return names.length > 0;
+}
+function setLive(ok, msg) {
+  const el = $("#live"); if (!el) return; el.classList.toggle("err", !ok);
+  el.querySelector("span").textContent = ok ? `Live · synced ${S.lastSync.toLocaleTimeString([], {hour: "2-digit", minute: "2-digit", second: "2-digit"})}` : (msg || "Offline, retrying");
+}
+async function syncLoop() {
+  for (;;) {
+    await sleep((CFG.refreshSeconds || 5) * 1000);
+    if (document.hidden) continue;
+    try { const changed = await loadAll(false); if (changed && !S.editing && !$("#modalRoot").innerHTML) render(); }
+    catch (e) { if (e.message === "NOT_SIGNED_IN") return location.reload(); setLive(false); }
+  }
+}
+async function refreshNow() { try { await loadAll(true); } catch (e) { toast(e.message, true); } render(); }
+async function logActivity(action, target, details) {
+  try { await rest("activity", {method: "POST", body: {user_name: S.me.name, action, target, details: String(details || "").slice(0, 2000)}}); }
+  catch (e) { console.warn("activity log failed", e); }
+}
+
+/* ---- photos (private bucket "photos", shown with signed links) ---- */
+const thumbPath = p => p.replace(/\.jpg$/i, "_t.jpg");
+const objPath = p => p.split("/").map(enc).join("/");
+S.urls = {};
+async function signPaths(paths) {
+  const need = [...new Set(paths)].filter(p => p && (!S.urls[p] || S.urls[p].exp < Date.now()));
+  for (let i = 0; i < need.length; i += 100) {
+    const res = await api("/storage/v1/object/sign/photos", {method: "POST", body: {expiresIn: 21600, paths: need.slice(i, i + 100)}});
+    (res || []).forEach(x => { const u = x.signedURL || x.signedUrl; if (u && !x.error) S.urls[x.path] = {u: /^https?:/.test(u) ? u : SB + "/storage/v1" + u, exp: Date.now() + 6 * 3600e3 - 120e3}; });
+  }
+}
+async function hydratePhotos(root) {
+  const imgs = [...(root || document).querySelectorAll("img[data-ph]")];
+  if (!imgs.length) return;
+  const want = imgs.map(i => i.dataset.size === "large" ? i.dataset.ph : thumbPath(i.dataset.ph));
+  try { await signPaths(want); } catch (e) { console.warn(e); return; }
+  imgs.forEach((img, k) => {
+    img.onerror = () => { if (img.dataset.fb) return; img.dataset.fb = 1; signPaths([img.dataset.ph]).then(() => { const s = S.urls[img.dataset.ph]; if (s) img.src = s.u; }).catch(() => {}); };
+    const s = S.urls[want[k]] || S.urls[img.dataset.ph];
+    if (s && img.getAttribute("src") !== s.u) img.src = s.u; else if (!s) img.onerror();
+  });
+}
+function compressImage(file, max = 1600, q = 0.82) {
+  return new Promise((res, rej) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      let {width: w, height: h} = img; const s = Math.min(1, max / Math.max(w, h)); w = Math.round(w * s); h = Math.round(h * s);
+      const c = document.createElement("canvas"); c.width = w; c.height = h; c.getContext("2d").drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url); c.toBlob(b => b ? res(b) : rej(new Error("Could not read image")), "image/jpeg", q);
+    };
+    img.onerror = () => rej(new Error("Could not read image " + file.name));
+    img.src = url;
+  });
+}
+async function uploadPhoto(file, path) {
+  const [full, thumb] = await Promise.all([compressImage(file, 1600, 0.82), compressImage(file, 400, 0.75)]);
+  const up = (b, p) => api("/storage/v1/object/photos/" + objPath(p), {method: "POST", body: b, headers: {"Content-Type": "image/jpeg", "x-upsert": "true", "cache-control": "31536000"}});
+  await up(full, path); await up(thumb, thumbPath(path));
+  return path;
+}
+async function deletePhotos(paths) {
+  if (!paths.length) return;
+  try { await api("/storage/v1/object/photos", {method: "DELETE", body: {prefixes: paths.concat(paths.map(thumbPath))}}); } catch (e) { console.warn("photo delete failed", e); }
+}
+
+/* =====================================================================
+   START-UP + SIGN-IN SCREENS
+   ===================================================================== */
+function splash(html) { $("#splashMsg").innerHTML = html; $("#splash").classList.remove("hidden"); $("#app").classList.add("hidden"); }
+const formCss = `style="text-align:left;display:flex;flex-direction:column;gap:10px;margin-top:14px"`;
+function showSignIn(msg, err) {
+  splash(`<form id="fIn" ${formCss}>
+    ${msg ? `<div class="${err ? "notice" : "small"}" style="${err ? "" : "color:var(--g800)"}">${esc(msg)}</div>` : ""}
+    <label class="small"><b>Email</b><input class="in" type="email" id="aEmail" autocomplete="username" required value="${esc(lsGet("efalp_last_email") || "")}"></label>
+    <label class="small"><b>Password</b><input class="in" type="password" id="aPass" autocomplete="current-password" required></label>
+    <button class="btn pri" style="justify-content:center;padding:10px" id="aBtn">Sign in</button>
+    <div class="small" style="display:flex;justify-content:space-between"><a href="#" id="aNew">Create account</a><a href="#" id="aForgot">Forgot password?</a></div></form>`);
+  $("#fIn").onsubmit = async e => {
+    e.preventDefault(); const b = $("#aBtn"); b.disabled = true; b.textContent = "Signing in…";
+    try { lsSet("efalp_last_email", $("#aEmail").value.trim()); saveSession(await authCall("token?grant_type=password", {email: $("#aEmail").value.trim(), password: $("#aPass").value})); start(); }
+    catch (er) { showSignIn(er.message, true); }
+  };
+  $("#aNew").onclick = e => { e.preventDefault(); showSignUp(); };
+  $("#aForgot").onclick = e => { e.preventDefault(); showForgot(); };
+}
+function showSignUp(msg) {
+  splash(`<form id="fUp" ${formCss}>
+    <div class="small muted">Create your account. The Super Admin then approves it and gives you a role.</div>
+    ${msg ? `<div class="notice">${esc(msg)}</div>` : ""}
+    <label class="small"><b>Full name</b><input class="in" id="uName" required></label>
+    <label class="small"><b>Email</b><input class="in" type="email" id="uEmail" autocomplete="username" required></label>
+    <label class="small"><b>Password</b> (at least 8 characters)<input class="in" type="password" id="uPass" minlength="8" autocomplete="new-password" required></label>
+    <button class="btn pri" style="justify-content:center;padding:10px" id="uBtn">Create account</button>
+    <a href="#" class="small" id="uBack">‹ Back to sign in</a></form>`);
+  $("#uBack").onclick = e => { e.preventDefault(); showSignIn(); };
+  $("#fUp").onsubmit = async e => {
+    e.preventDefault(); const b = $("#uBtn"); b.disabled = true; b.textContent = "Creating…";
+    try {
+      const email = $("#uEmail").value.trim(); lsSet("efalp_last_email", email);
+      const j = await authCall("signup?redirect_to=" + enc(REDIRECT), {email, password: $("#uPass").value, data: {name: $("#uName").value.trim()}});
+      if (j.access_token) { saveSession(j); start(); }
+      else showSignIn("Account created. We've emailed you a confirmation link: open it, then sign in here.");
+    } catch (er) { showSignUp(er.message); }
+  };
+}
+function showForgot(msg) {
+  splash(`<form id="fFg" ${formCss}><div class="small muted">Enter your email and we'll send you a link to set a new password.</div>
+    ${msg ? `<div class="notice">${esc(msg)}</div>` : ""}
+    <label class="small"><b>Email</b><input class="in" type="email" id="fEmail" required value="${esc(lsGet("efalp_last_email") || "")}"></label>
+    <button class="btn pri" style="justify-content:center;padding:10px" id="fBtn">Send reset link</button><a href="#" class="small" id="fBack">‹ Back to sign in</a></form>`);
+  $("#fBack").onclick = e => { e.preventDefault(); showSignIn(); };
+  $("#fFg").onsubmit = async e => {
+    e.preventDefault(); $("#fBtn").disabled = true;
+    try { await authCall("recover?redirect_to=" + enc(REDIRECT), {email: $("#fEmail").value.trim()}); showSignIn("If that email has an account, a reset link is on its way. Check your inbox."); }
+    catch (er) { showForgot(er.message); }
+  };
+}
+function showNewPassword(msg) {
+  splash(`<form id="fNp" ${formCss}><div class="small muted">Choose a new password.</div>${msg ? `<div class="notice">${esc(msg)}</div>` : ""}
+    <label class="small"><b>New password</b> (at least 8 characters)<input class="in" type="password" id="nPass" minlength="8" autocomplete="new-password" required></label>
+    <button class="btn pri" style="justify-content:center;padding:10px">Save password</button></form>`);
+  $("#fNp").onsubmit = async e => {
+    e.preventDefault();
+    try { await authCall("user", {password: $("#nPass").value}, "PUT", await getToken()); toast("Password updated"); start(); }
+    catch (er) { showNewPassword(er.message); }
+  };
+}
+/* links from Supabase emails come back as #access_token=…&type=signup|recovery */
+async function handleAuthHash() {
+  const h = location.hash.replace(/^#\/?/, "");
+  if (!/access_token=|error_description=/.test(h)) return null;
+  const p = new URLSearchParams(h); history.replaceState(null, "", location.pathname + location.search);
+  if (p.get("error_description")) { showSignIn(p.get("error_description").replace(/\+/g, " "), true); return "error"; }
+  saveSession({access_token: p.get("access_token"), refresh_token: p.get("refresh_token"), expires_in: p.get("expires_in")});
+  if (p.get("type") === "recovery") { showNewPassword(); return "recovery"; }
+  return "ok";
+}
+async function start() {
+  if (!SB || !KEY || /YOUR-PROJECT|PASTE/i.test(SB + KEY)) {
+    return splash(`<p style="text-align:left">The app is not configured yet. Open <b>config.js</b> and fill in <b>supabaseUrl</b> and <b>supabaseKey</b>. See <b>SETUP_GUIDE.md</b>.</p>`);
+  }
+  try {
+    const hm = await handleAuthHash(); if (hm === "recovery" || hm === "error") return;
+    if (!SESSION) return showSignIn();
+    splash(`<div class="spin"></div><p>Signing in…</p>`);
+    await getToken();
+    if (!SESSION.user || !SESSION.user.id) { const u = await authCall("user", null, "GET", await getToken()); SESSION.user = {id: u.id, email: u.email}; lsSet("efalp_sb", JSON.stringify(SESSION)); }
+    const prof = ((await rest(`profiles?select=*&id=eq.${SESSION.user.id}`)) || [])[0];
+    const out = `<br><br><button class="btn" onclick="location.reload()">Check again</button> <button class="btn" onclick="signOut()">Sign out</button>`;
+    if (!prof) return splash(`<p>Signed in as <b>${esc(SESSION.user.email)}</b>, but no user profile was found.</p><p class="small">The database setup (1_setup.sql) must be run <i>before</i> accounts are created. Ask the Super Admin to check.</p>${out}`);
+    if (!prof.active) return splash(`<p>The account <b>${esc(prof.email)}</b> is disabled.</p><p class="small">Contact the Super Admin.</p>${out}`);
+    if (prof.role === "pending") return splash(`<p>Hello <b>${esc(prof.name || prof.email)}</b>, your account is created.</p><p>The Super Admin needs to <b>approve</b> it and give you a role. Ask them to open <b>Users</b> in the app.</p>${out}`);
+    S.me = {id: prof.id, name: prof.name || prof.email, email: prof.email}; S.role = prof.role;
+    splash(`<div class="spin"></div><p>Loading nursery data…</p>`);
+    await loadAll(true);
+    $("#splash").classList.add("hidden"); $("#app").classList.remove("hidden");
+    $("#meName").textContent = S.me.name; $("#meRole").textContent = ROLES[S.role] + " · " + S.me.email;
+    if (!S.started) { S.started = 1; window.addEventListener("hashchange", () => { S.editing = false; render(); $("#side").classList.remove("open"); }); syncLoop(); }
+    render();
+  } catch (e) {
+    if (e.message === "NOT_SIGNED_IN") return showSignIn();
+    console.error(e);
+    splash(`<p style="color:var(--bad)"><b>Could not connect.</b><br>${esc(e.message)}</p><button class="btn pri" onclick="location.reload()">Try again</button> <button class="btn" onclick="signOut()">Sign out</button>`);
+  }
+}
+async function signOut() {
+  try { if (SESSION) await authCall("logout", {}, "POST", SESSION.access); } catch (e) {}
+  saveSession(null); location.hash = ""; location.reload();
+}
+
+/* =====================================================================
+   ROUTER + NAV
+   ===================================================================== */
+function route() { const h = (location.hash || "#/dashboard").slice(2).split("?")[0].split("/"); return {page: h[0] || "dashboard", arg: decodeURIComponent(h.slice(1).join("/"))}; }
+function nav() {
+  const r = route().page, items = [
+    ["dashboard", "Dashboard", ICON.dash], ["plants", "Plant Master", ICON.plant], ["reports", "Photo Reports", ICON.cam], ["labels", "QR Labels", ICON.qr]];
+  const admin = [];
+  if (can("fields")) admin.push(["fields", "Fields & Columns", ICON.cols]);
+  if (can("users")) { const pend = (S.tables.Users || {rows: []}).rows.filter(u => u.role === "pending").length; admin.push(["users", "Users" + (pend ? ` <span class="pill h-Weak" style="margin-left:auto">${pend}</span>` : ""), ICON.users]); }
+  if (can("activity")) admin.push(["activity", "Activity Log", ICON.log]);
+  if (can("settings")) admin.push(["settings", "Settings", ICON.gear]);
+  const a = ([k, l, i]) => `<a href="#/${k}" class="${r === k || (k === "plants" && ["plant", "new", "edit"].includes(r)) ? "on" : ""}">${i}${l}</a>`;
+  $("#nav").innerHTML = items.map(a).join("") + (admin.length ? `<div class="sep">Admin</div>` + admin.map(a).join("") : "") +
+    `<div class="sep">Data</div><a href="#" onclick="exportCSV(plants());return false">${ICON.xl}Export all plants (Excel)</a>` +
+    (can("settings") ? `<a href="#" onclick="downloadBackup();return false">${ICON.dl}Full backup</a>` : "");
+}
+function setTitle(t) { $("#title").textContent = t; document.title = t + " · EFALP Nurseries"; }
+function render() {
+  nav();
+  const {page, arg} = route(), v = $("#view");
+  const pages = {dashboard: pDashboard, plants: pPlants, plant: pPlant, new: pEdit, edit: pEdit, reports: pReports, labels: pLabels,
+    fields: pFields, users: pUsers, activity: pActivity, settings: pSettings};
+  (pages[page] || pDashboard)(v, arg);
+  hydratePhotos(v);
+}
+
+/* =====================================================================
+   DASHBOARD
+   ===================================================================== */
+function latestReports() { const m = {}; reports().forEach(r => { const k = r.Barcode; if (!m[k] || (r.Date + r["Created At"]) > (m[k].Date + m[k]["Created At"])) m[k] = r; }); return m; }
+function hbars(entries, opts = {}) {
+  const max = Math.max(1, ...entries.map(e => e[1]));
+  return `<div class="hbar">${entries.map(([l, v, href]) => `<div class="lab" title="${esc(l)}">${href ? `<a href="${href}">${esc(l)}</a>` : esc(l)}</div><div class="trk"><div class="fill" style="width:${(v / max * 100).toFixed(1)}%" title="${esc(l)}: ${fmt(v)}${opts.unit || ""}"></div></div><div class="val">${opts.money ? fmtAED(v) : fmt(v)}</div>`).join("")}</div>`;
+}
+function groupSum(list, key, val) { const m = {}; list.forEach(p => { const k = String(p[key] || "—").trim() || "—"; m[k] = (m[k] || 0) + val(p); }); return Object.entries(m).sort((a, b) => b[1] - a[1]); }
+function pDashboard(v) {
+  setTitle("Dashboard");
+  const ps = plants(), total = ps.reduce((s, p) => s + p._total, 0);
+  const priceCol = (S.fields.find(f => /price/i.test(f.col)) || {}).col, originCol = (S.fields.find(f => /origin/i.test(f.col)) || {}).col;
+  const nameCol = (S.fields.find(f => /common/i.test(f.col)) || {}).col || "Common Name";
+  const typCol = (S.fields.find(f => /typology/i.test(f.col)) || {}).col || "Plant Typology";
+  const priced = priceCol ? ps.filter(p => num(p[priceCol]) > 0) : [];
+  const value = priced.reduce((s, p) => s + p._total * num(p[priceCol]), 0);
+  const species = new Set(ps.map(p => String(p[nameCol]).trim().toLowerCase())).size;
+  const latest = latestReports(), withPhoto = new Set(reports().filter(r => r._photos.length).map(r => r.Barcode));
+  const byLoc = S.locations.map(l => [l.name, ps.filter(p => p[FIXED.location] === l.code).reduce((s, p) => s + p._total, 0), `#/plants?loc=${l.code}`]);
+  const linesLoc = S.locations.map(l => ps.filter(p => p[FIXED.location] === l.code).length);
+  const top = groupSum(ps, nameCol, p => p._total).slice(0, 10);
+  let typ = groupSum(ps, typCol, p => p._total); if (typ.length > 8) typ = typ.slice(0, 7).concat([["Other", typ.slice(7).reduce((s, e) => s + e[1], 0)]]);
+  const bandTot = S.bands.map(b => [b, ps.reduce((s, p) => s + num(p[b + " cm"]), 0)]).filter((e, i, a) => e[1] > 0 || a.slice(i).some(x => x[1] > 0));
+  const bmax = Math.max(1, ...bandTot.map(b => b[1]));
+  const hc = {}; Object.values(latest).forEach(r => hc[r.Health] = (hc[r.Health] || 0) + 1);
+  const recent = reports().filter(r => r._photos.length).sort((a, b) => String(b["Created At"]).localeCompare(String(a["Created At"]))).slice(0, 6);
+  const act = (S.tables.Activity || {rows: []}).rows.slice(-6).reverse();
+  v.innerHTML = `
+  <div class="kpis">
+    <div class="kpi"><div class="l">Total plants in stock</div><div class="v">${fmt(total)}</div><div class="s">${fmt(ps.length)} stock lines</div></div>
+    ${S.locations.map((l, i) => `<div class="kpi"><div class="l">${esc(l.name)}</div><div class="v">${fmt(byLoc[i][1])}</div><div class="s">${fmt(linesLoc[i])} stock lines</div></div>`).join("")}
+    <div class="kpi"><div class="l">Plant species</div><div class="v">${fmt(species)}</div><div class="s">unique common names</div></div>
+    <div class="kpi"><div class="l">Stock value</div><div class="v">${priced.length ? fmtAED(value) : "—"}</div><div class="s">${priced.length} of ${ps.length} lines have a unit price</div></div>
+  </div>
+  ${priceCol && priced.length < ps.length || originCol ? `<div class="notice">Data to complete: <b>${ps.length - priced.length}</b> lines without unit price${originCol ? `, <b>${ps.filter(p => !String(p[originCol]).trim()).length}</b> without origin` : ""}, <b>${ps.length - withPhoto.size}</b> without a photo report. <a href="#/plants">Open Plant Master</a></div>` : ""}
+  <div class="grid g2">
+    <div class="card"><h3>Plants by location</h3>${hbars(byLoc)}</div>
+    <div class="card"><h3>Plant health <small>latest report per stock line</small></h3>${Object.keys(hc).length ? `<div class="hbar">${S.health.filter(h => hc[h]).map(h => `<div class="lab"><span class="pill h-${esc(h)}">${esc(h)}</span></div><div class="trk"><div class="fill" style="width:${hc[h] / Math.max(...Object.values(hc)) * 100}%" title="${esc(h)}: ${hc[h]} lines"></div></div><div class="val">${hc[h]}</div>`).join("")}</div><p class="small muted" style="margin:10px 0 0">${Object.keys(latest).length} of ${ps.length} stock lines have a report</p>` : `<div class="empty">No photo reports yet.<br><span class="small">Open a plant and press <b>Add photo report</b>.</span></div>`}</div>
+    <div class="card"><h3>Top 10 plants by quantity</h3>${hbars(top.map(e => [e[0], e[1], `#/plants?q=${encodeURIComponent(e[0])}`]))}</div>
+    <div class="card"><h3>By plant typology</h3>${hbars(typ)}</div>
+  </div>
+  <div class="card" style="margin-top:16px"><h3>Stock by plant size <small>number of plants per height band (cm)</small></h3>
+    <div class="vbars">${bandTot.map(([b, q]) => `<div class="col" title="${b} cm: ${fmt(q)} plants"><span>${q ? fmt(q) : ""}</span><div class="f" style="height:${(q / bmax * 100).toFixed(1)}%"></div></div>`).join("")}</div>
+    <div class="vlabels">${bandTot.map(([b]) => `<span>${b}</span>`).join("")}</div></div>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card"><h3>Recent photo reports</h3>${recent.length ? `<div class="pgrid">${recent.map(r => `<div class="pc" onclick="location.hash='#/plant/${encodeURIComponent(r.Barcode)}'"><img data-ph="${esc(r._photos[0])}" alt=""><div><b>${esc(r.Barcode)}</b><br><span class="pill h-${esc(r.Health)}">${esc(r.Health)}</span> <span class="muted">${esc(r.Date)} · ${esc(r["Created By"])}</span></div></div>`).join("")}</div>` : `<div class="empty">No photos yet.</div>`}</div>
+    <div class="card"><h3>Recent activity</h3>${act.length ? `<table class="t"><tbody>${act.map(a => `<tr style="cursor:default"><td class="small muted" style="white-space:nowrap">${esc(excelDate(a.Time))}</td><td><b>${esc(a.User)}</b> ${esc(String(a.Action).toLowerCase())} <span class="mono">${esc(a.Target)}</span><div class="small muted">${esc(String(a.Details).slice(0, 120))}</div></td></tr>`).join("")}</tbody></table>` : `<div class="empty">No activity yet.</div>`}</div>
+  </div>`;
+}
+
+/* =====================================================================
+   PLANT MASTER (search + filters)
+   ===================================================================== */
+function qparams() { const i = location.hash.indexOf("?"); return new URLSearchParams(i >= 0 ? location.hash.slice(i + 1) : ""); }
+function listFields() { return S.fields.filter(f => f.active && f.exists && f.list); }
+function filterPlants(st) {
+  const q = (st.q || "").trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const latest = latestReports(), withPhoto = new Set(reports().filter(r => r._photos.length).map(r => r.Barcode));
+  const priceCol = (S.fields.find(f => /price/i.test(f.col)) || {}).col;
+  let list = plants().filter(p => {
+    if (st.loc && p[FIXED.location] !== st.loc) return false;
+    for (const [col, val] of Object.entries(st.f || {})) if (val && String(p[col]).trim() !== val) return false;
+    if (st.flag === "noprice" && priceCol && num(p[priceCol]) > 0) return false;
+    if (st.flag === "nophoto" && withPhoto.has(p[FIXED.barcode])) return false;
+    if (st.flag === "photo" && !withPhoto.has(p[FIXED.barcode])) return false;
+    if (st.flag && st.flag.startsWith("h:") && (!latest[p[FIXED.barcode]] || latest[p[FIXED.barcode]].Health !== st.flag.slice(2))) return false;
+    if (q.length) { const hay = Object.keys(p).filter(k => k[0] !== "_").map(k => p[k]).join(" ").toLowerCase() + " " + locName(p[FIXED.location]).toLowerCase(); if (!q.every(w => hay.includes(w))) return false; }
+    return true;
+  });
+  const s = st.sort || FIXED.barcode, dir = st.dir || 1;
+  list.sort((a, b) => { const x = s === "_total" ? a._total : a[s], y = s === "_total" ? b._total : b[s];
+    return (typeof x === "number" && typeof y === "number" ? x - y : String(x).localeCompare(String(y), undefined, {numeric: true})) * dir; });
+  return list;
+}
+function filterCols() { return S.fields.filter(f => f.active && f.exists && (f.type === "select" || /category|typology|site|origin/i.test(f.col))).slice(0, 4); }
+function pPlants(v) {
+  setTitle("Plant Master");
+  const qp = qparams();
+  if (!S.view.plants || qp.toString()) {
+    S.view.plants = {q: qp.get("q") || "", loc: qp.get("loc") || "", f: {}, flag: qp.get("flag") || "", page: 0, sort: FIXED.barcode, dir: 1, sel: new Set()};
+    if (qp.toString()) history.replaceState(null, "", "#/plants");
+  }
+  const st = S.view.plants, fc = filterCols();
+  const uniq = col => [...new Set(plants().map(p => String(p[col]).trim()).filter(Boolean))].sort();
+  v.innerHTML = `
+  <div class="bar noprint">
+    <div class="search">${ICON.search}<input class="in" id="q" placeholder="Search barcode, name, botanical, variety, origin, source, site…" value="${esc(st.q)}"></div>
+    ${can("edit") ? `<a class="btn pri" href="#/new">${ICON.plus}Add plant</a>` : ""}
+  </div>
+  <div class="bar noprint">
+    <select class="in" id="fLoc"><option value="">All locations</option>${S.locations.map(l => `<option value="${esc(l.code)}" ${st.loc === l.code ? "selected" : ""}>${esc(l.name)}</option>`).join("")}</select>
+    ${fc.map(f => `<select class="in" data-fcol="${esc(f.col)}"><option value="">All ${esc(f.label.toLowerCase())}</option>${uniq(f.col).map(o => `<option ${st.f[f.col] === o ? "selected" : ""}>${esc(o)}</option>`).join("")}</select>`).join("")}
+    <select class="in" id="fFlag"><option value="">All records</option><option value="noprice" ${st.flag === "noprice" ? "selected" : ""}>Missing unit price</option><option value="photo" ${st.flag === "photo" ? "selected" : ""}>With photo report</option><option value="nophoto" ${st.flag === "nophoto" ? "selected" : ""}>Without photo report</option>${S.health.map(h => `<option value="h:${esc(h)}" ${st.flag === "h:" + h ? "selected" : ""}>Health: ${esc(h)}</option>`).join("")}</select>
+    <span class="grow"></span>
+    <button class="btn" id="bClear">Clear</button>
+    <button class="btn" id="bCsv">${ICON.dl}Export</button>
+    <button class="btn" id="bLabels">${ICON.qr}QR labels</button>
+  </div>
+  <div id="plist"></div>`;
+  const draw = () => {
+    const list = filterPlants(st), per = 50, pages = Math.max(1, Math.ceil(list.length / per));
+    st.page = Math.min(st.page, pages - 1);
+    const rows = list.slice(st.page * per, st.page * per + per), lf = listFields(), latest = latestReports();
+    const lastPhoto = {}; reports().slice().sort((a, b) => String(a["Created At"]).localeCompare(String(b["Created At"]))).forEach(r => { if (r._photos.length) lastPhoto[r.Barcode] = r._photos[0]; });
+    const th = (k, l, cls = "") => `<th class="${cls}" data-sort="${esc(k)}">${esc(l)}${st.sort === k ? (st.dir > 0 ? " ▲" : " ▼") : ""}</th>`;
+    $("#plist").innerHTML = `
+      <div class="small muted" style="margin-bottom:8px">Showing <b>${fmt(list.length)}</b> stock lines · <b>${fmt(list.reduce((s, p) => s + p._total, 0))}</b> plants${st.sel.size ? ` · <b>${st.sel.size}</b> selected <a href="#" id="selClr">clear</a>` : ""}</div>
+      ${list.length ? `<div class="tablewrap"><table class="t"><thead><tr><th style="width:30px"><input type="checkbox" id="selAll"></th><th style="width:50px"></th>
+      ${th(FIXED.barcode, "Barcode")}${lf.map(f => th(f.col, f.label, f.type === "number" ? "num hide-m" : "hide-m")).join("")}${th(FIXED.location, "Location", "hide-m")}${th("_total", "Qty", "num")}<th class="hide-m">Health</th></tr></thead>
+      <tbody>${rows.map(p => { const b = p[FIXED.barcode], lr = latest[b]; return `<tr data-b="${esc(b)}"><td onclick="event.stopPropagation()"><input type="checkbox" data-selb="${esc(b)}" ${st.sel.has(b) ? "checked" : ""}></td>
+        <td>${lastPhoto[b] ? `<img class="thumb" data-ph="${esc(lastPhoto[b])}" alt="">` : `<div class="thumb ph">${ICON.leaf}</div>`}</td>
+        <td style="white-space:nowrap"><b class="mono">${esc(b)}</b><div class="small muted" style="display:none" data-m>${esc(p[(lf[0] || {}).col] || "")}</div></td>
+        ${lf.map(f => `<td class="${f.type === "number" ? "num " : ""}hide-m">${f.type === "number" && p[f.col] !== "" ? num(p[f.col]).toLocaleString() : esc(p[f.col])}</td>`).join("")}
+        <td class="hide-m"><span class="pill loc-${esc(p[FIXED.location])}">${esc(locName(p[FIXED.location]))}</span></td>
+        <td class="num"><b>${fmt(p._total)}</b></td><td class="hide-m">${lr ? `<span class="pill h-${esc(lr.Health)}">${esc(lr.Health)}</span>` : `<span class="muted small">—</span>`}</td></tr>`; }).join("")}</tbody></table></div>
+      <div class="pager"><button class="btn sm" id="pPrev" ${st.page ? "" : "disabled"}>‹ Prev</button> Page ${st.page + 1} of ${pages} <button class="btn sm" id="pNext" ${st.page < pages - 1 ? "" : "disabled"}>Next ›</button></div>`
+      : `<div class="card empty">No plants match your search.</div>`}`;
+    if (matchMedia("(max-width:900px)").matches) document.querySelectorAll("[data-m]").forEach(e => e.style.display = "block");
+    $("#plist").querySelectorAll("tbody tr").forEach(tr => tr.onclick = () => location.hash = "#/plant/" + encodeURIComponent(tr.dataset.b));
+    $("#plist").querySelectorAll("th[data-sort]").forEach(t => t.onclick = () => { const k = t.dataset.sort; st.dir = st.sort === k ? -st.dir : 1; st.sort = k; draw(); });
+    $("#plist").querySelectorAll("[data-selb]").forEach(c => c.onchange = () => { c.checked ? st.sel.add(c.dataset.selb) : st.sel.delete(c.dataset.selb); draw(); });
+    const sa = $("#selAll"); if (sa) sa.onchange = () => { rows.forEach(p => sa.checked ? st.sel.add(p[FIXED.barcode]) : st.sel.delete(p[FIXED.barcode])); draw(); };
+    const sc = $("#selClr"); if (sc) sc.onclick = e => { e.preventDefault(); st.sel.clear(); draw(); };
+    if ($("#pPrev")) { $("#pPrev").onclick = () => { st.page--; draw(); }; $("#pNext").onclick = () => { st.page++; draw(); }; }
+    hydratePhotos($("#plist"));
+  };
+  let t; $("#q").oninput = e => { clearTimeout(t); t = setTimeout(() => { st.q = e.target.value; st.page = 0; draw(); }, 150); };
+  $("#fLoc").onchange = e => { st.loc = e.target.value; st.page = 0; draw(); };
+  $("#fFlag").onchange = e => { st.flag = e.target.value; st.page = 0; draw(); };
+  v.querySelectorAll("[data-fcol]").forEach(s => s.onchange = () => { st.f[s.dataset.fcol] = s.value; st.page = 0; draw(); });
+  $("#bClear").onclick = () => { S.view.plants = null; pPlants(v); };
+  $("#bCsv").onclick = () => exportCSV(st.sel.size ? plants().filter(p => st.sel.has(p[FIXED.barcode])) : filterPlants(st));
+  $("#bLabels").onclick = () => { S.labelList = (st.sel.size ? plants().filter(p => st.sel.has(p[FIXED.barcode])) : filterPlants(st)).map(p => p[FIXED.barcode]); location.hash = "#/labels"; };
+  draw();
+  if (st.q) { const i = $("#q"); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }
+}
+function exportCSV(list) {
+  const cols = S.tables.Plants.headers, label = c => (S.fields.find(f => f.col === c) || {}).label || c;
+  const cell = v => { v = v == null ? "" : String(v); return /[",\n;]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v; };
+  const csv = "﻿" + [cols.map(c => cell(label(c))).join(",")].concat(list.map(p => cols.map(c => cell(p[c])).join(","))).join("\r\n");
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], {type: "text/csv;charset=utf-8"}));
+  a.download = `EFALP_Plants_${today()}.csv`; a.click(); toast(`Exported ${list.length} stock lines`);
+}
+function downloadBackup() {
+  const data = {exported: new Date().toISOString(), by: S.me.email, plants: S.raw.plants, reports: S.raw.reports, fields: S.raw.fields, settings: S.raw.settings,
+    users: S.raw.profiles.map(u => ({email: u.email, name: u.name, role: u.role, active: u.active}))};
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 1)], {type: "application/json"}));
+  a.download = `EFALP_Backup_${today()}.json`; a.click(); toast("Backup downloaded – save it to your OneDrive");
+}
+/* =====================================================================
+   QR CODE
+   ===================================================================== */
+function sizeSummary(p) { return S.bands.filter(b => num(p[b + " cm"]) > 0).map(b => `${b} cm (${fmt(num(p[b + " cm"]))})`).join(", "); }
+function qrText(p) {
+  const appUrl = (S.settings["App URL"] || "").trim();
+  if (/link/i.test(S.settings["QR Content"] || "") && appUrl) return appUrl.replace(/[#/]*$/, "") + "/#/plant/" + encodeURIComponent(p[FIXED.barcode]);
+  const lines = [S.settings["Company Name"] || "EFALP Nurseries", "Barcode: " + p[FIXED.barcode], "Location: " + locName(p[FIXED.location])];
+  S.fields.filter(f => f.active && f.exists && f.qr && String(p[f.col]).trim()).forEach(f => lines.push(`${f.label}: ${p[f.col]}`));
+  const sz = sizeSummary(p); if (sz) lines.push("Available Sizes: " + sz);
+  lines.push("Total Qty: " + fmt(p._total));
+  return lines.join("\n");
+}
+let logoImg = null;
+function loadLogo() { return logoImg ? Promise.resolve(logoImg) : new Promise(r => { const i = new Image(); i.onload = () => r(logoImg = i); i.onerror = () => r(null); i.src = "logo.png"; }); }
+async function qrLabelCanvas(p) {
+  const W = 720, H = 900, c = document.createElement("canvas"); c.width = W; c.height = H; const g = c.getContext("2d");
+  g.fillStyle = "#fff"; g.fillRect(0, 0, W, H);
+  const logo = await loadLogo(); if (logo) g.drawImage(logo, 30, 24, 96, 96);
+  const nameCol = (S.fields.find(f => /common/i.test(f.col)) || {}).col, varCol = (S.fields.find(f => /variety/i.test(f.col)) || {}).col;
+  g.fillStyle = "#146b3a"; g.font = "bold 38px Segoe UI, Arial"; g.fillText(S.settings["Company Name"] || "EFALP Nurseries", 146, 66);
+  g.fillStyle = "#4b5a50"; g.font = "24px Segoe UI, Arial"; g.fillText(locName(p[FIXED.location]), 146, 102);
+  const qc = qrCanvas(qrText(p), 600); g.imageSmoothingEnabled = false; g.drawImage(qc, 60, 140, 600, 600);
+  g.fillStyle = "#000"; g.textAlign = "center"; g.font = "bold 44px Consolas, monospace"; g.fillText(p[FIXED.barcode], W / 2, 795);
+  g.font = "28px Segoe UI, Arial"; g.fillStyle = "#333";
+  const sub = [nameCol && p[nameCol], varCol && p[varCol]].filter(Boolean).join(" · "); g.fillText(sub.length > 44 ? sub.slice(0, 43) + "…" : sub, W / 2, 845);
+  return c;
+}
+async function downloadQR(b) {
+  const p = plants().find(x => x[FIXED.barcode] === b); if (!p) return;
+  const c = await qrLabelCanvas(p);
+  c.toBlob(bl => { const a = document.createElement("a"); a.href = URL.createObjectURL(bl); a.download = `QR_${b}.png`; a.click(); });
+}
+
+/* =====================================================================
+   PLANT DETAIL
+   ===================================================================== */
+function fieldValueHTML(f, v) {
+  if (v === "" || v == null) return `<span class="muted">—</span>`;
+  if (f.type === "url" || /^https?:\/\//.test(String(v))) return `<a href="${esc(v)}" target="_blank" rel="noopener">${f.col.match(/qr/i) ? "Download QR (OneDrive)" : "Open link"}</a>`;
+  if (f.type === "number" && /price/i.test(f.col)) return fmtAED(num(v)).replace("AED ", "AED ");
+  return esc(v);
+}
+function pPlant(v, b) {
+  const p = plants().find(x => x[FIXED.barcode] === b);
+  if (!p) { setTitle("Plant not found"); v.innerHTML = `<div class="card empty">Plant <b>${esc(b)}</b> was not found. It may have been deleted.<br><br><a class="btn" href="#/plants">Back to Plant Master</a></div>`; return; }
+  const nameCol = (S.fields.find(f => /common/i.test(f.col)) || {}).col, varCol = (S.fields.find(f => /variety/i.test(f.col)) || {}).col, botCol = (S.fields.find(f => /botanical/i.test(f.col)) || {}).col;
+  setTitle(`${b} · ${p[nameCol] || ""}`);
+  const groups = {}; S.fields.filter(f => f.active && f.exists).forEach(f => (groups[f.group] = groups[f.group] || []).push(f));
+  const reps = reports().filter(r => r.Barcode === b).sort((x, y) => (String(y.Date) + y["Created At"]).localeCompare(String(x.Date) + x["Created At"]));
+  const sizes = S.bands.filter(bd => num(p[bd + " cm"]) > 0);
+  v.innerHTML = `
+  <div class="noprint" style="margin-bottom:10px"><a href="#/plants" class="small">‹ Plant Master</a></div>
+  <div class="dhead">
+    <div style="flex:1;min-width:240px">
+      <div class="mono muted">${esc(b)}</div>
+      <h2>${esc(p[nameCol] || b)}</h2>
+      <div class="sub">${esc([p[varCol], p[botCol] ? "" + p[botCol] : ""].filter(Boolean).join(" · "))}</div>
+      <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap"><span class="pill loc-${esc(p[FIXED.location])}">${esc(locName(p[FIXED.location]))}</span><span class="pill">${fmt(p._total)} plants</span>${reps[0] ? `<span class="pill h-${esc(reps[0].Health)}">${esc(reps[0].Health)}</span>` : ""}</div>
+    </div>
+    <div class="bar noprint" style="margin:0">
+      ${can("report") ? `<button class="btn pri" onclick="reportModal('${esc(b)}')">${ICON.cam}Add photo report</button>` : ""}
+      ${can("edit") ? `<a class="btn" href="#/edit/${encodeURIComponent(b)}">${ICON.edit}Edit</a>` : ""}
+      <button class="btn" onclick="window.print()">${ICON.print}Print</button>
+      ${can("del") ? `<button class="btn danger" onclick="deletePlant('${esc(b)}')">${ICON.trash}Delete</button>` : ""}
+    </div>
+  </div>
+  <div class="grid" style="grid-template-columns:minmax(0,1fr) 260px;align-items:start" id="dgrid">
+    <div class="grid">
+      <div class="card"><h3>Available sizes <small>${fmt(p._total)} plants total</small></h3>${sizes.length ? `<div class="sizes">${sizes.map(bd => `<div><b>${fmt(num(p[bd + " cm"]))}</b><span>${bd} cm</span></div>`).join("")}</div>` : `<span class="muted">No size quantities recorded.</span>`}</div>
+      ${Object.entries(groups).map(([g, fs]) => `<div class="card"><h3>${esc(g)}</h3><dl class="dl">${fs.map(f => `<dt>${esc(f.label)}</dt><dd>${fieldValueHTML(f, p[f.col])}</dd>`).join("")}</dl></div>`).join("")}
+      <div class="card"><h3>Photo reports <small>${reps.length}</small></h3>
+        ${reps.length ? reps.map(r => `<div class="rep"><div class="meta"><span class="pill h-${esc(r.Health)}">${esc(r.Health)}</span><b>${esc(r.Date)}</b><span>by ${esc(r["Created By"])}</span>
+          ${can("delReport") || r._by === S.me.id ? `<button class="btn sm danger noprint" style="margin-left:auto" onclick="deleteReport('${esc(r["Report ID"])}','${esc(b)}')">Delete</button>` : ""}</div>
+          ${r.Note ? `<p>${esc(r.Note)}</p>` : ""}<div class="photos">${r._photos.map(id => `<img data-ph="${esc(id)}" onclick="lightbox('${esc(id)}')" alt="">`).join("")}</div></div>`).join("")
+        : `<div class="empty">No reports yet.${can("report") ? `<br><br><button class="btn pri noprint" onclick="reportModal('${esc(b)}')">${ICON.cam}Add the first photo report</button>` : ""}</div>`}
+      </div>
+    </div>
+    <div class="grid">
+      <div class="card qrbox"><h3>QR code</h3><div class="q">${qrSVG(qrText(p))}</div>
+        <div class="mono" style="margin-top:8px;font-weight:700">${esc(b)}</div>
+        <div class="noprint" style="margin-top:10px;display:flex;flex-direction:column;gap:6px">
+          <button class="btn" style="justify-content:center" onclick="downloadQR('${esc(b)}')">${ICON.dl}Download QR label</button>
+          <button class="btn sm" style="justify-content:center" onclick="showQRText('${esc(b)}')">What the QR shows</button>
+        </div></div>
+      <div class="card small"><h3>Record</h3><dl class="dl" style="grid-template-columns:90px 1fr"><dt>Updated</dt><dd>${esc(p[FIXED.at] || "—")}</dd><dt>By</dt><dd>${esc(p[FIXED.by] || "—")}</dd></dl></div>
+    </div>
+  </div>`;
+  if (matchMedia("(max-width:900px)").matches) $("#dgrid").style.gridTemplateColumns = "1fr";
+}
+function showQRText(b) { const p = plants().find(x => x[FIXED.barcode] === b); modal("QR content", `<pre style="white-space:pre-wrap;font-size:13px;background:var(--g50);padding:12px;border-radius:8px;margin:0">${esc(qrText(p))}</pre><p class="small muted">Change which fields appear under <b>Fields &amp; Columns</b> (Show in QR).</p>`, null); }
+function lightbox(path) {
+  const d = document.createElement("div"); d.id = "lightbox";
+  d.innerHTML = `<div class="spin"></div>`;
+  d.onclick = () => d.remove();
+  document.body.appendChild(d);
+  signPaths([path]).then(() => { const s = S.urls[path]; d.innerHTML = s ? `<img src="${esc(s.u)}" alt=""><a href="${esc(s.u)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Open full size</a>` : `<p style="color:#fff">Photo not found</p>`; }).catch(e => d.innerHTML = `<p style="color:#fff">${esc(e.message)}</p>`);
+}
+async function deletePlant(b) {
+  const reps = reports().filter(r => r.Barcode === b);
+  if (!confirm(`Delete plant ${b}?${reps.length ? `\n\nIts ${reps.length} photo report(s) and their photos will also be deleted.` : ""}\n\nThis cannot be undone.`)) return;
+  try {
+    const p = plants().find(x => x[FIXED.barcode] === b) || {};
+    await rest(`plants?barcode=eq.${enc(b)}`, {method: "DELETE"});
+    await deletePhotos([].concat(...reps.map(r => r._photos)));
+    await logActivity("Deleted", b, `${p["Common Name"] || ""} ${p["Variety"] || ""} · qty ${p._total || 0}${reps.length ? ` · ${reps.length} reports` : ""}`);
+    toast(`${b} deleted`); location.hash = "#/plants"; refreshNow();
+  } catch (e) { toast("Delete failed: " + e.message, true); }
+}
+function modal(title, body, onSave, opts = {}) {
+  $("#modalRoot").innerHTML = `<div class="modal-bg"><div class="modal ${opts.wide ? "wide" : ""}"><header><h3>${esc(title)}</h3><button class="x" data-close>&times;</button></header><div class="body">${body}</div>
+    <footer>${onSave ? `<button class="btn" data-close>Cancel</button><button class="btn pri" id="mSave">${esc(opts.saveText || "Save")}</button>` : `<button class="btn" data-close>Close</button>`}</footer></div></div>`;
+  const close = () => { $("#modalRoot").innerHTML = ""; };
+  $("#modalRoot").querySelectorAll("[data-close]").forEach(b => b.onclick = close);
+  if (onSave) $("#mSave").onclick = async () => { const b = $("#mSave"); b.disabled = true; const o = b.textContent; b.textContent = "Saving…";
+    try { if (await onSave() !== false) close(); } catch (e) { if (e.message !== "CANCELLED") toast(e.message, true); } finally { if ($("#mSave")) { b.disabled = false; b.textContent = o; } } };
+  return close;
+}
+function reportModal(b) {
+  let files = [];
+  modal(`Photo report · ${b}`, `
+    <div class="form">
+      <div><label>Date</label><input class="in" type="date" id="rDate" value="${today()}"></div>
+      <div><label>Plant health</label><select class="in" id="rHealth">${S.health.map(h => `<option ${h === "Good" ? "selected" : ""}>${esc(h)}</option>`).join("")}</select></div>
+      <div class="full"><label>Notes / observations</label><textarea class="in" id="rNote" rows="3" placeholder="Condition, pests, watering, actions taken…"></textarea></div>
+      <div class="full"><label>Photos</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><label class="btn" style="margin:0;color:var(--ink);font-size:14px">${ICON.cam}Take / choose photos<input type="file" id="rFiles" accept="image/*" multiple hidden></label></div>
+        <div class="photos" id="rPrev" style="margin-top:10px"></div><div class="small muted" id="rInfo">Photos are resized automatically before upload.</div></div>
+    </div>`, async () => {
+      if (!files.length && !$("#rNote").value.trim()) { toast("Add at least one photo or a note", true); return false; }
+      const paths = [], stamp = new Date().toISOString().replace(/[-:T.Z]/g, "").slice(0, 14);
+      for (let i = 0; i < files.length; i++) {
+        $("#mSave").textContent = `Uploading photo ${i + 1} of ${files.length}…`;
+        paths.push(await uploadPhoto(files[i], `${b}/${stamp}_${i + 1}.jpg`));
+      }
+      $("#mSave").textContent = "Saving report…";
+      const row = {barcode: b, date: $("#rDate").value || today(), health: $("#rHealth").value, note: $("#rNote").value.trim(), photos: paths, created_by: S.me.name};
+      try { await rest("reports", {method: "POST", body: row, headers: RET}); }
+      catch (e) { await deletePhotos(paths); throw e; }
+      await logActivity("Photo report", b, `${row.health} · ${paths.length} photo(s)${row.note ? " · " + row.note.slice(0, 80) : ""}`);
+      toast("Photo report saved"); await loadAll(true).catch(() => {}); render();
+    }, {saveText: "Save report"});
+  $("#rFiles").onchange = e => {
+    files = files.concat([...e.target.files]); e.target.value = "";
+    $("#rPrev").innerHTML = files.map((f, i) => `<div style="position:relative"><img src="${URL.createObjectURL(f)}" alt=""><button class="x" style="position:absolute;top:0;right:4px;color:#fff;text-shadow:0 0 4px #000" data-rm="${i}">&times;</button></div>`).join("");
+    $("#rPrev").querySelectorAll("[data-rm]").forEach(x => x.onclick = () => { files.splice(+x.dataset.rm, 1); $("#rFiles").onchange({target: {files: [], value: ""}}); });
+    $("#rInfo").textContent = `${files.length} photo(s) selected`;
+  };
+}
+async function deleteReport(id, b) {
+  if (!confirm("Delete this photo report and its photos?")) return;
+  try {
+    const r = reports().find(x => x["Report ID"] === id) || {_photos: []};
+    await rest(`reports?id=eq.${enc(id)}`, {method: "DELETE"}); await deletePhotos(r._photos);
+    await logActivity("Deleted report", b, `${r.Date} ${r.Health}`); toast("Report deleted"); refreshNow();
+  } catch (e) { toast("Delete failed: " + e.message, true); }
+}
+/* =====================================================================
+   ADD / EDIT PLANT
+   ===================================================================== */
+function suggestBarcode(loc, name) {
+  const all = plants().map(p => p[FIXED.barcode]);
+  const nameCol = (S.fields.find(f => /common/i.test(f.col)) || {}).col;
+  const same = plants().filter(p => String(p[nameCol]).trim().toLowerCase() === String(name).trim().toLowerCase() && name);
+  let prefix = (same.find(p => p[FIXED.location] === loc) || same[0] || {})[FIXED.barcode];
+  prefix = prefix ? prefix.split("-")[1] : (String(name).toUpperCase().replace(/[^A-Z]/g, "").slice(0, 4) || "PLNT");
+  const base = `${loc}-${prefix}-`;
+  const n = Math.max(0, ...all.filter(c => c.startsWith(base)).map(c => parseInt(c.slice(base.length)) || 0)) + 1;
+  return base + String(n).padStart(4, "0");
+}
+function inputFor(f, val) {
+  const id = `f_${btoa(unescape(encodeURIComponent(f.col))).replace(/[^a-z0-9]/gi, "")}`;
+  const lbl = `<label for="${id}">${esc(f.label)}${f.req ? ' <span class="req">*</span>' : ""}</label>`;
+  const a = `id="${id}" data-col="${esc(f.col)}" class="in"`;
+  if (f.type === "select") {
+    const opts = f.options.slice(); if (val && !opts.includes(String(val))) opts.unshift(String(val));
+    return `<div>${lbl}<select ${a}><option value=""></option>${opts.map(o => `<option ${String(val) === o ? "selected" : ""}>${esc(o)}</option>`).join("")}</select></div>`;
+  }
+  if (f.type === "longtext") return `<div class="full">${lbl}<textarea ${a} rows="2">${esc(val)}</textarea></div>`;
+  if (f.type === "number") return `<div>${lbl}<input ${a} type="number" step="any" value="${esc(val)}"></div>`;
+  if (f.type === "date") return `<div>${lbl}<input ${a} type="date" value="${esc(/^\d{4}-\d{2}-\d{2}$/.test(val) ? val : "")}"></div>`;
+  if (f.type === "url") return `<div>${lbl}<input ${a} type="url" value="${esc(val)}" placeholder="https://"></div>`;
+  const uniq = [...new Set(plants().map(p => String(p[f.col]).trim()).filter(Boolean))].sort().slice(0, 300);
+  return `<div>${lbl}<input ${a} list="${id}_dl" value="${esc(val)}" autocomplete="off"><datalist id="${id}_dl">${uniq.map(u => `<option value="${esc(u)}">`).join("")}</datalist></div>`;
+}
+async function savePlant(isNew, origBarcode, changes, orig) {
+  const row = rowFromPlant(changes, orig && orig._data);
+  if (isNew) { await rest("plants", {method: "POST", body: row, headers: RET}); return null; }
+  let res = await rest(`plants?barcode=eq.${enc(origBarcode)}&updated_at=eq.${enc(orig._ts)}`, {method: "PATCH", body: row, headers: RET});
+  if (!res || !res.length) {
+    const cur = ((await rest(`plants?barcode=eq.${enc(origBarcode)}&select=updated_by,updated_at`)) || [])[0];
+    if (!cur) throw new Error(`${origBarcode} no longer exists. It may have been deleted by another user.`);
+    if (!confirm(`${origBarcode} was changed by ${cur.updated_by || "another user"} at ${fmtTs(cur.updated_at)} while you were editing.\n\nOK = overwrite with your changes\nCancel = keep their version`)) throw new Error("CANCELLED");
+    res = await rest(`plants?barcode=eq.${enc(origBarcode)}`, {method: "PATCH", body: row, headers: RET});
+  }
+  return res;
+}
+function pEdit(v, b) {
+  if (!can("edit")) { v.innerHTML = `<div class="card empty">You don't have permission to edit plants.</div>`; return; }
+  const isNew = !b, p = isNew ? {} : plants().find(x => x[FIXED.barcode] === b);
+  if (!isNew && !p) { v.innerHTML = `<div class="card empty">Plant not found.</div>`; return; }
+  S.editing = true;
+  setTitle(isNew ? "Add plant" : `Edit ${b}`);
+  const groups = {}; S.fields.filter(f => f.active && f.exists).forEach(f => (groups[f.group] = groups[f.group] || []).push(f));
+  const loc0 = p[FIXED.location] || (S.locations[0] || {}).code;
+  v.innerHTML = `
+  <div style="margin-bottom:10px"><a href="${isNew ? "#/plants" : "#/plant/" + encodeURIComponent(b)}" class="small">‹ Back</a></div>
+  <div class="card" style="max-width:1100px">
+    <div class="fgroup"><h4>Identification</h4><div class="form">
+      <div><label>Location <span class="req">*</span></label><select class="in" id="eLoc">${S.locations.map(l => `<option value="${esc(l.code)}" ${l.code === loc0 ? "selected" : ""}>${esc(l.name)} (${esc(l.code)})</option>`).join("")}</select></div>
+      <div><label>Barcode No. <span class="req">*</span></label><input class="in mono" id="eBar" value="${esc(isNew ? "" : b)}" placeholder="auto from location + common name">${isNew ? `<div class="small muted">Suggested automatically – you can change it.</div>` : ""}</div>
+    </div></div>
+    ${Object.entries(groups).map(([g, fs]) => `<div class="fgroup"><h4>${esc(g)}</h4><div class="form">${fs.map(f => inputFor(f, isNew ? "" : p[f.col])).join("")}</div></div>`).join("")}
+    <div class="fgroup"><h4>Quantity by plant size (cm) · Total: <span id="eTot">${fmt(p._total || 0)}</span></h4>
+      <div class="sizegrid">${S.bands.map(bd => `<div><label>${bd} cm</label><input class="in" type="number" min="0" step="1" data-band="${esc(bd)}" value="${esc(p[bd + " cm"] === "" || p[bd + " cm"] == null ? "" : p[bd + " cm"])}"></div>`).join("")}</div></div>
+    <div class="bar" style="justify-content:flex-end;margin:0;border-top:1px solid var(--line);padding-top:14px">
+      <a class="btn" href="${isNew ? "#/plants" : "#/plant/" + encodeURIComponent(b)}">Cancel</a>
+      <button class="btn pri" id="eSave">${isNew ? "Add plant" : "Save changes"}</button>
+    </div>
+  </div>`;
+  const nameInput = v.querySelector(`[data-col="${(S.fields.find(f => /common/i.test(f.col)) || {}).col}"]`);
+  let barTouched = !isNew;
+  const sug = () => { if (!barTouched) $("#eBar").value = suggestBarcode($("#eLoc").value, nameInput ? nameInput.value : ""); };
+  if (isNew) { $("#eBar").oninput = () => barTouched = !!$("#eBar").value; $("#eLoc").onchange = sug; if (nameInput) nameInput.addEventListener("input", sug); sug(); barTouched = false; }
+  v.querySelectorAll("[data-band]").forEach(i => i.oninput = () => $("#eTot").textContent = fmt([...v.querySelectorAll("[data-band]")].reduce((s, x) => s + num(x.value), 0)));
+  $("#eSave").onclick = async () => {
+    const btn = $("#eSave"), bar = $("#eBar").value.trim().toUpperCase(), changes = {};
+    if (!bar) return toast("Barcode is required", true);
+    if ((isNew || bar !== b) && plants().some(x => x[FIXED.barcode].toUpperCase() === bar)) return toast(`Barcode ${bar} already exists`, true);
+    for (const el of v.querySelectorAll("[data-col]")) {
+      const f = S.fields.find(x => x.col === el.dataset.col); let val = el.value.trim();
+      if (f.req && !val) { el.focus(); return toast(`${f.label} is required`, true); }
+      changes[f.col] = f.type === "number" && val !== "" ? num(val) : val;
+    }
+    let tot = 0; v.querySelectorAll("[data-band]").forEach(i => { const n = i.value === "" ? "" : Math.max(0, Math.round(num(i.value))); changes[i.dataset.band + " cm"] = n; tot += n || 0; });
+    Object.assign(changes, {[FIXED.barcode]: bar, [FIXED.location]: $("#eLoc").value, [FIXED.total]: tot, [FIXED.by]: S.me.name, [FIXED.at]: nowStr()});
+    btn.disabled = true; btn.textContent = "Saving…";
+    try {
+      if (isNew) {
+        await savePlant(true, null, changes, null);
+        await logActivity("Added", bar, `${changes["Common Name"] || ""} ${changes["Variety"] || ""} · qty ${tot}`);
+      } else {
+        await savePlant(false, b, changes, p); const before = p;
+        const diff = Object.keys(changes).filter(k => ![FIXED.by, FIXED.at].includes(k) && String(before[k] == null ? "" : before[k]) !== String(changes[k])).map(k => `${k}: ${before[k] === "" ? "—" : before[k]} → ${changes[k] === "" ? "—" : changes[k]}`);
+        await logActivity("Edited", bar, diff.join("; ").slice(0, 900) || "No changes");
+      }
+      S.editing = false; toast(isNew ? `${bar} added` : `${bar} saved`);
+      await loadAll(true).catch(() => {});
+      location.hash = "#/plant/" + encodeURIComponent(bar);
+    } catch (e) { if (e.message !== "CANCELLED") toast("Save failed: " + e.message, true); btn.disabled = false; btn.textContent = isNew ? "Add plant" : "Save changes"; }
+  };
+}
+
+/* =====================================================================
+   PHOTO REPORTS PAGE
+   ===================================================================== */
+function pReports(v) {
+  setTitle("Photo Reports");
+  const st = S.view.reports || (S.view.reports = {loc: "", health: "", by: "", q: "", from: "", to: ""});
+  const byList = [...new Set(reports().map(r => r["Created By"]).filter(Boolean))];
+  v.innerHTML = `<div class="bar noprint">
+    <div class="search">${ICON.search}<input class="in" id="rq" placeholder="Search barcode or notes…" value="${esc(st.q)}"></div>
+    <select class="in" id="rl"><option value="">All locations</option>${S.locations.map(l => `<option value="${esc(l.code)}" ${st.loc === l.code ? "selected" : ""}>${esc(l.name)}</option>`).join("")}</select>
+    <select class="in" id="rh"><option value="">All health</option>${S.health.map(h => `<option ${st.health === h ? "selected" : ""}>${esc(h)}</option>`).join("")}</select>
+    <select class="in" id="rb"><option value="">Everyone</option>${byList.map(u => `<option ${st.by === u ? "selected" : ""}>${esc(u)}</option>`).join("")}</select>
+    <input class="in" type="date" id="rf" value="${esc(st.from)}" style="width:auto" title="From"><input class="in" type="date" id="rt" value="${esc(st.to)}" style="width:auto" title="To">
+    <button class="btn" onclick="window.print()">${ICON.print}Print</button></div><div id="rlist"></div>`;
+  const draw = () => {
+    const pmap = {}; plants().forEach(p => pmap[p[FIXED.barcode]] = p);
+    const nameCol = (S.fields.find(f => /common/i.test(f.col)) || {}).col;
+    const list = reports().filter(r => {
+      const p = pmap[r.Barcode] || {};
+      if (st.loc && (p[FIXED.location] || String(r.Barcode).split("-")[0]) !== st.loc) return false;
+      if (st.health && r.Health !== st.health) return false;
+      if (st.by && r["Created By"] !== st.by) return false;
+      if (st.from && r.Date < st.from) return false;
+      if (st.to && r.Date > st.to) return false;
+      if (st.q && !(r.Barcode + " " + r.Note + " " + (p[nameCol] || "")).toLowerCase().includes(st.q.toLowerCase())) return false;
+      return true;
+    }).sort((a, b) => (String(b.Date) + b["Created At"]).localeCompare(String(a.Date) + a["Created At"]));
+    $("#rlist").innerHTML = list.length ? `<div class="small muted" style="margin-bottom:8px">${list.length} reports</div>` + list.map(r => { const p = pmap[r.Barcode] || {}; return `<div class="card" style="margin-bottom:12px">
+      <div class="rep"><div class="meta"><a href="#/plant/${encodeURIComponent(r.Barcode)}" class="mono"><b>${esc(r.Barcode)}</b></a><b>${esc(p[nameCol] || "")}</b><span class="pill h-${esc(r.Health)}">${esc(r.Health)}</span><span>${esc(r.Date)} · ${esc(r["Created By"])}</span>${p[FIXED.location] ? `<span class="pill loc-${esc(p[FIXED.location])}">${esc(locName(p[FIXED.location]))}</span>` : ""}</div>
+      ${r.Note ? `<p>${esc(r.Note)}</p>` : ""}<div class="photos">${r._photos.map(id => `<img data-ph="${esc(id)}" onclick="lightbox('${esc(id)}')" alt="">`).join("")}</div></div></div>`; }).join("")
+      : `<div class="card empty">No photo reports found.<br><span class="small">Open any plant in the Plant Master and press <b>Add photo report</b>.</span></div>`;
+    hydratePhotos($("#rlist"));
+  };
+  const bind = (id, k, ev = "onchange") => $(id)[ev] = e => { st[k] = e.target.value; draw(); };
+  bind("#rq", "q", "oninput"); bind("#rl", "loc"); bind("#rh", "health"); bind("#rb", "by"); bind("#rf", "from"); bind("#rt", "to");
+  draw();
+}
+
+/* =====================================================================
+   QR LABELS (print sheet)
+   ===================================================================== */
+function pLabels(v) {
+  setTitle("QR Labels");
+  const codes = S.labelList && S.labelList.length ? S.labelList : null;
+  const list = codes ? plants().filter(p => codes.includes(p[FIXED.barcode])) : [];
+  const nameCol = (S.fields.find(f => /common/i.test(f.col)) || {}).col, varCol = (S.fields.find(f => /variety/i.test(f.col)) || {}).col;
+  v.innerHTML = `<div class="bar noprint">
+    <div class="search">${ICON.search}<input class="in" id="lq" placeholder="Type barcodes or a plant name, e.g. Mango or ALRH-COCA"></div>
+    <select class="in" id="lLoc"><option value="">All locations</option>${S.locations.map(l => `<option value="${esc(l.code)}">${esc(l.name)}</option>`).join("")}</select>
+    <button class="btn" id="lFind">Select</button>
+    <button class="btn pri" onclick="window.print()" ${list.length ? "" : "disabled"}>${ICON.print}Print ${list.length} labels</button>
+    ${list.length ? `<button class="btn" id="lZip">${ICON.dl}Download PNGs</button>` : ""}
+  </div>
+  <p class="small muted noprint">${list.length ? `${list.length} labels ready. Tip: in the Plant Master, filter or tick plants and press <b>QR labels</b>.` : "Choose which plants to print: search above, or filter / tick plants in the Plant Master and press <b>QR labels</b>."}</p>
+  <div class="labels">${list.slice(0, 600).map(p => `<div class="label"><div class="q">${qrSVG(qrText(p), {margin: 1})}</div><div><img class="lg" src="logo.png" alt=""><b class="mono">${esc(p[FIXED.barcode])}</b>${esc(p[nameCol] || "")}<br><span class="muted">${esc(p[varCol] || "")}</span><br>${esc(locName(p[FIXED.location]))}</div></div>`).join("")}</div>`;
+  $("#lFind").onclick = () => { S.view.plants = null; S.labelList = filterPlants({q: $("#lq").value, loc: $("#lLoc").value, f: {}}).map(p => p[FIXED.barcode]); pLabels(v); };
+  $("#lq").onkeydown = e => { if (e.key === "Enter") $("#lFind").click(); };
+  if ($("#lZip")) $("#lZip").onclick = async () => { if (list.length > 30 && !confirm(`Download ${list.length} PNG files one by one?`)) return; for (const p of list) { await downloadQR(p[FIXED.barcode]); await sleep(350); } };
+}
+
+/* =====================================================================
+   ADMIN · FIELDS & COLUMNS
+   ===================================================================== */
+const TYPES = {text: "Text", number: "Number", date: "Date", select: "Dropdown list", longtext: "Long text", url: "Link (URL)"};
+function pFields(v) {
+  if (!can("fields")) { v.innerHTML = `<div class="card empty">Super Admin only.</div>`; return; }
+  setTitle("Fields & Columns");
+  const fs = S.fields;
+  v.innerHTML = `<div class="bar"><div class="grow small muted">These are the plant fields. New fields appear immediately for everyone in the add/edit form and on the plant page. You can also show them in the list, the QR code, and the Excel export.</div>
+    <button class="btn pri" onclick="fieldModal()">${ICON.plus}Add new field</button></div>
+  <div class="tablewrap"><table class="t"><thead><tr><th>Order</th><th>Label</th><th>Type</th><th>Group</th><th>In QR</th><th>In list</th><th>Required</th><th>Filled</th><th>Status</th><th></th></tr></thead><tbody>
+  ${fs.map((f, i) => `<tr style="cursor:default"><td style="white-space:nowrap"><button class="btn sm" ${i ? "" : "disabled"} onclick="moveField(${i},-1)">↑</button> <button class="btn sm" ${i < fs.length - 1 ? "" : "disabled"} onclick="moveField(${i},1)">↓</button></td>
+    <td><b>${esc(f.label)}</b>${f.label !== f.col ? `<div class="small muted mono">${esc(f.col)}</div>` : ""}</td><td>${TYPES[f.type] || esc(f.type)}</td><td>${esc(f.group)}</td>
+    <td>${f.qr ? "✓" : ""}</td><td>${f.list ? "✓" : ""}</td><td>${f.req ? "✓" : ""}</td><td class="small">${plants().filter(p => String(p[f.col] == null ? "" : p[f.col]).trim()).length} / ${plants().length}</td>
+    <td>${f.active ? '<span class="pill">Active</span>' : '<span class="pill h-Weak">Hidden</span>'}</td>
+    <td style="white-space:nowrap"><button class="btn sm" onclick="fieldModal('${esc(f.col)}')">Edit</button> <button class="btn sm danger" onclick="deleteField('${esc(f.col)}')">Delete</button></td></tr>`).join("")}
+  </tbody></table></div>
+  <p class="small muted">Fixed fields (always present): Barcode, Location, size bands (${esc(S.bands.join(", "))} cm), Total Qty, Updated By, Updated At.</p>`;
+}
+function fieldModal(col) {
+  const f = col ? S.fields.find(x => x.col === col) : {label: "", type: "text", group: "Master Data", options: [], qr: false, list: false, req: false, active: true};
+  const groups = [...new Set(S.fields.map(x => x.group))];
+  modal(col ? `Edit field · ${f.label}` : "Add new field", `<div class="form">
+    <div><label>Label (shown in app)</label><input class="in" id="fl" value="${esc(f.label)}" placeholder="e.g. Supplier, Pot Size, Height"></div>
+    <div><label>Type</label><select class="in" id="ft">${Object.entries(TYPES).map(([k, l]) => `<option value="${k}" ${f.type === k ? "selected" : ""}>${l}</option>`).join("")}</select></div>
+    <div><label>Group / section</label><input class="in" id="fg" list="fgl" value="${esc(f.group)}"><datalist id="fgl">${groups.map(g => `<option value="${esc(g)}">`).join("")}</datalist></div>
+    <div class="full" id="foWrap"><label>Dropdown options (one per line)</label><textarea class="in" id="fo" rows="4">${esc(f.options.join("\n"))}</textarea></div>
+    <div class="full" style="display:flex;gap:18px;flex-wrap:wrap">
+      <label style="display:flex;gap:6px;align-items:center;font-weight:500"><input type="checkbox" id="fq" ${f.qr ? "checked" : ""}> Show in QR code</label>
+      <label style="display:flex;gap:6px;align-items:center;font-weight:500"><input type="checkbox" id="fli" ${f.list ? "checked" : ""}> Show as column in Plant Master list</label>
+      <label style="display:flex;gap:6px;align-items:center;font-weight:500"><input type="checkbox" id="fr" ${f.req ? "checked" : ""}> Required</label>
+      <label style="display:flex;gap:6px;align-items:center;font-weight:500"><input type="checkbox" id="fa" ${f.active ? "checked" : ""}> Active (untick to hide without deleting data)</label>
+    </div>
+    ${col ? `<div class="full small muted">Renaming the label keeps all existing data.</div>` : ""}
+  </div>`, async () => {
+    const label = $("#fl").value.trim(); if (!label) { toast("Label is required", true); return false; }
+    const row = {label, type: $("#ft").value, grp: $("#fg").value.trim() || "Other", options: $("#fo").value.split("\n").map(s => s.trim()).filter(Boolean).join(";"),
+      show_in_qr: $("#fq").checked, show_in_list: $("#fli").checked, required: $("#fr").checked, active: $("#fa").checked};
+    if (col) { await rest(`fields?col=eq.${enc(col)}`, {method: "PATCH", body: row}); await logActivity("Edited field", label, `type ${row.type}, QR ${row.show_in_qr ? "yes" : "no"}, list ${row.show_in_list ? "yes" : "no"}, ${row.active ? "active" : "hidden"}`); }
+    else {
+      const key = label.replace(/[^\p{L}\p{N} ()\-\/.]/gu, "").trim();
+      const taken = new Set(S.fields.map(x => x.col.toLowerCase()).concat(Object.values(FIXED).map(x => x.toLowerCase()), S.bands.map(b => (b + " cm").toLowerCase())));
+      if (!key || taken.has(key.toLowerCase())) { toast(`A field named "${label}" already exists`, true); return false; }
+      await rest("fields", {method: "POST", body: Object.assign({col: key, sort: Math.max(0, ...S.fields.map(x => x.order)) + 1}, row)});
+      await logActivity("Added field", label, `New field (${TYPES[row.type]})`);
+    }
+    toast("Field saved"); await loadAll(true); render();
+  });
+  const sync = () => $("#foWrap").style.display = $("#ft").value === "select" ? "" : "none"; $("#ft").onchange = sync; sync();
+}
+async function moveField(i, d) {
+  const list = S.fields.slice(), a = list[i]; if (!list[i + d]) return;
+  list.splice(i, 1); list.splice(i + d, 0, a);
+  try {
+    const changed = list.map((f, k) => [f, k + 1]).filter(([f, k]) => f.order !== k);
+    await Promise.all(changed.map(([f, k]) => rest(`fields?col=eq.${enc(f.col)}`, {method: "PATCH", body: {sort: k}})));
+    await loadAll(true); render();
+  } catch (e) { toast(e.message, true); }
+}
+async function deleteField(col) {
+  const f = S.fields.find(x => x.col === col);
+  const filled = plants().filter(p => String(p[col] == null ? "" : p[col]).trim()).length;
+  if (!confirm(`Delete field "${f.label}"?\n\n${filled ? `⚠ ${filled} plants have a value in this field. These values will be permanently deleted.\n\nTip: use Edit → untick "Active" to hide it instead.` : "No plant has a value in this field."}`)) return;
+  try {
+    if (filled) await rest("rpc/remove_field_data", {method: "POST", body: {p_col: col}});
+    await rest(`fields?col=eq.${enc(col)}`, {method: "DELETE"});
+    await logActivity("Deleted field", f.label, `${filled} values removed`);
+    toast("Field deleted"); await loadAll(true); render();
+  } catch (e) { toast("Delete failed: " + e.message, true); }
+}
+/* =====================================================================
+   ADMIN · USERS
+   ===================================================================== */
+function pUsers(v) {
+  if (!can("users")) { v.innerHTML = `<div class="card empty">Super Admin only.</div>`; return; }
+  setTitle("Users");
+  const us = S.tables.Users.rows, pend = us.filter(u => u.role === "pending"), act = us.filter(u => u.role !== "pending");
+  const url = S.settings["App URL"] || REDIRECT;
+  v.innerHTML = `
+  ${pend.length ? `<div class="card" style="margin-bottom:16px;border-color:#f3dcae;background:#fffaf0"><h3>Waiting for approval <small>${pend.length}</small></h3>
+    <table class="t" style="background:transparent"><tbody>${pend.map(u => `<tr style="cursor:default"><td><b>${esc(u.Name)}</b><div class="small muted">${esc(u.Email)} · signed up ${esc(u.created)}</div></td>
+    <td style="text-align:right;white-space:nowrap"><button class="btn sm pri" onclick="setRole('${u.id}','engineer')">Approve as Engineer</button> <button class="btn sm" onclick="setRole('${u.id}','manager')">as Manager</button> <button class="btn sm danger" onclick="removeUser('${u.id}')">Reject</button></td></tr>`).join("")}</tbody></table></div>` : ""}
+  <div class="bar"><div class="grow small muted">To add a person: send them the app link <b class="mono">${esc(url)}</b>. They press <b>Create account</b>, then appear here for you to approve.</div>
+    <button class="btn" onclick="navigator.clipboard.writeText('${esc(url)}').then(()=>toast('Link copied'))">Copy app link</button></div>
+  <div class="tablewrap"><table class="t"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th></th></tr></thead><tbody>
+  ${act.map(u => `<tr style="cursor:default"><td><b>${esc(u.Name)}</b>${u.id === S.me.id ? ' <span class="small muted">(you)</span>' : ""}</td><td>${esc(u.Email)}</td><td>${esc(u.Role)}</td><td>${u.Active === "No" ? '<span class="pill h-Weak">Disabled</span>' : '<span class="pill">Active</span>'}</td>
+  <td style="white-space:nowrap;text-align:right"><button class="btn sm" onclick="userModal('${u.id}')">Edit</button></td></tr>`).join("")}
+  </tbody></table></div>
+  <div class="card small" style="margin-top:16px"><h3>What each role can do</h3>
+  <table class="t"><thead><tr><th>Action</th><th>Super Admin</th><th>Manager</th><th>Engineer</th></tr></thead><tbody>
+  ${[["View dashboard, plants, reports, QR codes", 1, 1, 1], ["Add & edit plants, update stock quantities", 1, 1, 1], ["Add photo reports", 1, 1, 1], ["Delete plants & any report", 1, 1, 0], ["View activity log", 1, 1, 0], ["Add / change fields & columns", 1, 0, 0], ["Approve users, change roles, settings", 1, 0, 0]].map(r => `<tr style="cursor:default"><td>${r[0]}</td>${r.slice(1).map(x => `<td>${x ? "✓" : "—"}</td>`).join("")}</tr>`).join("")}
+  </tbody></table><p class="muted" style="margin:10px 0 0">These rules are enforced by the database itself, not only by the app.</p></div>`;
+}
+async function setRole(id, role) {
+  try { const u = S.tables.Users.rows.find(x => x.id === id); await rest(`profiles?id=eq.${id}`, {method: "PATCH", body: {role, active: true}}); await logActivity("Approved user", u.Email, ROLES[role]); toast(`${u.Name} approved as ${ROLES[role]}`); await loadAll(true); render(); }
+  catch (e) { toast(e.message, true); }
+}
+function userModal(id) {
+  const u = S.tables.Users.rows.find(x => x.id === id);
+  modal("Edit user", `<div class="form">
+    <div class="full"><label>Email</label><input class="in" value="${esc(u.Email)}" disabled></div>
+    <div><label>Name</label><input class="in" id="un" value="${esc(u.Name)}"></div>
+    <div><label>Role</label><select class="in" id="ur">${Object.entries(ROLES).map(([k, r]) => `<option value="${k}" ${u.role === k ? "selected" : ""}>${r}</option>`).join("")}</select></div>
+    <div><label>Status</label><select class="in" id="ua"><option value="true">Active</option><option value="false" ${u.Active === "No" ? "selected" : ""}>Disabled (cannot sign in to the app)</option></select></div></div>`, async () => {
+    const row = {name: $("#un").value.trim() || u.Email, role: $("#ur").value, active: $("#ua").value === "true"};
+    await rest(`profiles?id=eq.${id}`, {method: "PATCH", body: row});
+    await logActivity("Edited user", u.Email, `${ROLES[row.role]}, ${row.active ? "active" : "disabled"}`);
+    toast("User saved"); await loadAll(true); render();
+  });
+}
+async function removeUser(id) {
+  const u = S.tables.Users.rows.find(x => x.id === id);
+  if (!confirm(`Reject ${u.Email}? They won't be able to use the app.`)) return;
+  try { await rest(`profiles?id=eq.${id}`, {method: "PATCH", body: {active: false}}); await logActivity("Rejected user", u.Email, ""); await loadAll(true); render(); toast("User rejected"); }
+  catch (e) { toast(e.message, true); }
+}
+/* =====================================================================
+   ADMIN · ACTIVITY + SETTINGS
+   ===================================================================== */
+function pActivity(v) {
+  if (!can("activity")) { v.innerHTML = `<div class="card empty">No access.</div>`; return; }
+  setTitle("Activity Log");
+  const all = (S.tables.Activity || {rows: []}).rows.slice().reverse();
+  v.innerHTML = `<div class="bar"><div class="search">${ICON.search}<input class="in" id="aq" placeholder="Search user, barcode, action…"></div><button class="btn" onclick="refreshNow()">Refresh</button></div><div id="alist"></div>`;
+  const draw = q => { const l = all.filter(a => !q || Object.values(a).join(" ").toLowerCase().includes(q.toLowerCase())).slice(0, 500);
+    $("#alist").innerHTML = `<div class="tablewrap"><table class="t"><thead><tr><th>Time</th><th>User</th><th>Action</th><th>Target</th><th>Details</th></tr></thead><tbody>${l.map(a => `<tr style="cursor:default"><td class="small" style="white-space:nowrap">${esc(excelDate(a.Time))}</td><td>${esc(a.User)}</td><td>${esc(a.Action)}</td><td class="mono">${/^[A-Z]{3,5}-/.test(a.Target) ? `<a href="#/plant/${encodeURIComponent(a.Target)}">${esc(a.Target)}</a>` : esc(a.Target)}</td><td class="small">${esc(a.Details)}</td></tr>`).join("")}</tbody></table></div>`; };
+  $("#aq").oninput = e => draw(e.target.value); draw("");
+}
+function pSettings(v) {
+  if (!can("settings")) { v.innerHTML = `<div class="card empty">Super Admin only.</div>`; return; }
+  setTitle("Settings");
+  const s = S.settings;
+  v.innerHTML = `<div class="card" style="max-width:820px"><div class="form">
+    <div class="full"><label>Company name</label><input class="in" id="sCo" value="${esc(s["Company Name"] || "EFALP Nurseries")}"></div>
+    <div class="full"><label>Nursery locations (one per line: CODE = Name)</label><textarea class="in mono" id="sLoc" rows="3">${esc(S.locations.map(l => `${l.code} = ${l.name}`).join("\n"))}</textarea>
+      <div class="small muted">The code is the first part of each barcode (e.g. ALRH-COCA-0001).</div></div>
+    <div class="full"><label>Plant health options (one per line)</label><textarea class="in" id="sH" rows="4">${esc(S.health.join("\n"))}</textarea></div>
+    <div><label>QR code content</label><select class="in" id="sQr"><option value="details">Plant details as text (works offline)</option><option value="link" ${/link/i.test(s["QR Content"]) ? "selected" : ""}>Link that opens the plant in this app</option></select></div>
+    <div><label>App web address</label><input class="in" id="sUrl" value="${esc(s["App URL"] || REDIRECT)}"></div>
+    <div class="full small muted">Size bands: ${esc(S.bands.join(", "))} cm.</div>
+  </div><div class="bar" style="justify-content:flex-end;margin:14px 0 0"><button class="btn pri" id="sSave">Save settings</button></div></div>
+  <div class="card small" style="max-width:820px;margin-top:16px"><h3>Backup</h3>
+    <p>Data is stored in your Supabase database. Download a copy now and then and keep it on your company OneDrive:</p>
+    <div class="bar" style="margin:0"><button class="btn" onclick="exportCSV(plants())">${ICON.xl}Plants (Excel / CSV)</button><button class="btn" onclick="downloadBackup()">${ICON.dl}Full backup (all data)</button></div>
+    <p class="muted">Supabase free plan: the project pauses after 7 days with no use at all. Open the app at least once a week, or restore it from the Supabase dashboard with one click.</p></div>`;
+  $("#sSave").onclick = async () => {
+    const vals = {"Company Name": $("#sCo").value.trim(), "Locations": $("#sLoc").value.split("\n").map(l => l.split("=").map(x => x.trim())).filter(x => x[0]).map(x => `${x[0].toUpperCase()}=${x[1] || x[0]}`).join(";"),
+      "Health Options": $("#sH").value.split("\n").map(x => x.trim()).filter(Boolean).join(";"), "QR Content": $("#sQr").value, "App URL": $("#sUrl").value.trim()};
+    const b = $("#sSave"); b.disabled = true; b.textContent = "Saving…";
+    try {
+      const rows = Object.entries(vals).filter(([k, val]) => String(S.settings[k] == null ? "" : S.settings[k]) !== val).map(([key, value]) => ({key, value}));
+      if (rows.length) await rest("settings?on_conflict=key", {method: "POST", body: rows, headers: {Prefer: "resolution=merge-duplicates"}});
+      await logActivity("Settings", "Settings", rows.map(r => r.key).join(", ") || "No changes"); await loadAll(true); toast("Settings saved"); render();
+    } catch (e) { toast(e.message, true); b.disabled = false; b.textContent = "Save settings"; }
+  };
+}
+start();
+</script>
+</body>
+</html>
