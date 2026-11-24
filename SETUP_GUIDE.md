@@ -27,11 +27,11 @@ Setup takes about 15 minutes and has 5 steps.
 
 1. In Supabase, open **SQL Editor** (left menu) → **New query**.
 2. Open [`supabase/1_setup.sql`](supabase/1_setup.sql), copy **everything**, paste it, and press **Run**. You should see *Success*.
-3. **New query** again. Open **`2_data.sql`** (sent to you separately, not on GitHub, because it contains your
-   stock quantities and the repository is public), copy everything, paste it, and press **Run**. This loads
-   your 354 stock lines from Al Raheeb and Dhadna.
+3. Your plant data is loaded later, from inside the app (step 5): you sign in, and the dashboard shows an
+   **Import your stock data** button where you choose the file **EFALP_starting_data.json** (sent to you
+   separately, not on GitHub, because it contains your stock quantities).
 
-> Run the two files in this order, and before anyone creates an account.
+> Run `1_setup.sql` before anyone creates an account.
 
 ## Step 3 · Login settings (2 min)
 
@@ -58,7 +58,8 @@ Setup takes about 15 minutes and has 5 steps.
 ## Step 5 · Accounts
 
 1. **You first:** open https://rmshd78.github.io/efalp-nursery-app/ → **Create account** → confirm the email →
-   sign in. **The first account automatically becomes Super Admin.**
+   sign in. **The first account automatically becomes Super Admin.** On the dashboard, press **Choose file…** under
+   *Import your stock data* and pick **EFALP_starting_data.json**. The 354 stock lines load in a few seconds.
 2. Send the link to your manager and the engineer. They press **Create account** and confirm their email.
 3. In the app, open **Users**. They appear under *Waiting for approval*. Press **Approve as Engineer** or **as Manager**.
 

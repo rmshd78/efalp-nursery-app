@@ -604,6 +604,30 @@ function hbars(entries, opts = {}) {
   return `<div class="hbar">${entries.map(([l, v, href]) => `<div class="lab" title="${esc(l)}">${href ? `<a href="${href}">${esc(l)}</a>` : esc(l)}</div><div class="trk"><div class="fill" style="width:${(v / max * 100).toFixed(1)}%" title="${esc(l)}: ${fmt(v)}${opts.unit || ""}"></div></div><div class="val">${opts.money ? fmtAED(v) : fmt(v)}</div>`).join("")}</div>`;
 }
 function groupSum(list, key, val) { const m = {}; list.forEach(p => { const k = String(p[key] || "—").trim() || "—"; m[k] = (m[k] || 0) + val(p); }); return Object.entries(m).sort((a, b) => b[1] - a[1]); }
+function importCard() {
+  return `<div class="card" style="margin-bottom:16px;border-color:#bfe3c8;background:#f3fbf5"><h3>Import your stock data</h3>
+    <p class="small" style="margin-top:0">The database has no plants yet. Choose the file <b>EFALP_starting_data.json</b> to load your stock lines.</p>
+    <label class="btn pri" style="margin:0">${ICON.dl}Choose file…<input type="file" accept=".json,application/json" hidden onchange="importData(this.files[0])"></label>
+    <span id="impMsg" class="small muted" style="margin-left:10px"></span></div>`;
+}
+async function importData(file) {
+  if (!file) return;
+  const msg = t => { const m = $("#impMsg"); if (m) m.textContent = t; };
+  try {
+    let j; try { j = JSON.parse(await file.text()); } catch (e) { throw new Error("This file can't be read. Choose EFALP_starting_data.json."); }
+    if (!j || !j.efalp_import || !Array.isArray(j.plants)) throw new Error("This is not an EFALP data file. Choose EFALP_starting_data.json.");
+    const ign = {Prefer: "resolution=ignore-duplicates,return=minimal"};
+    msg("Loading fields and settings…");
+    if (j.fields && j.fields.length) await rest("fields?on_conflict=col", {method: "POST", body: j.fields, headers: ign});
+    if (j.settings && j.settings.length) await rest("settings?on_conflict=key", {method: "POST", body: j.settings, headers: ign});
+    for (let i = 0; i < j.plants.length; i += 100) {
+      msg(`Loading plants ${i + 1}–${Math.min(i + 100, j.plants.length)} of ${j.plants.length}…`);
+      await rest("plants?on_conflict=barcode", {method: "POST", body: j.plants.slice(i, i + 100), headers: ign});
+    }
+    await logActivity("Imported", "Database", `${j.plants.length} stock lines from ${file.name}`);
+    toast(`Imported ${j.plants.length} stock lines`); await loadAll(true); render();
+  } catch (e) { msg(""); toast("Import failed: " + e.message, true); }
+}
 function pDashboard(v) {
   setTitle("Dashboard");
   const ps = plants(), total = ps.reduce((s, p) => s + p._total, 0);
@@ -623,7 +647,7 @@ function pDashboard(v) {
   const hc = {}; Object.values(latest).forEach(r => hc[r.Health] = (hc[r.Health] || 0) + 1);
   const recent = reports().filter(r => r._photos.length).sort((a, b) => String(b["Created At"]).localeCompare(String(a["Created At"]))).slice(0, 6);
   const act = (S.tables.Activity || {rows: []}).rows.slice(-6).reverse();
-  v.innerHTML = `
+  v.innerHTML = (can("settings") && !ps.length ? importCard() : "") + `
   <div class="kpis">
     <div class="kpi"><div class="l">Total plants in stock</div><div class="v">${fmt(total)}</div><div class="s">${fmt(ps.length)} stock lines</div></div>
     ${S.locations.map((l, i) => `<div class="kpi"><div class="l">${esc(l.name)}</div><div class="v">${fmt(byLoc[i][1])}</div><div class="s">${fmt(linesLoc[i])} stock lines</div></div>`).join("")}
@@ -1201,7 +1225,8 @@ function pSettings(v) {
   </div><div class="bar" style="justify-content:flex-end;margin:14px 0 0"><button class="btn pri" id="sSave">Save settings</button></div></div>
   <div class="card small" style="max-width:820px;margin-top:16px"><h3>Backup</h3>
     <p>Data is stored in your Supabase database. Download a copy now and then and keep it on your company OneDrive:</p>
-    <div class="bar" style="margin:0"><button class="btn" onclick="exportCSV(plants())">${ICON.xl}Plants (Excel / CSV)</button><button class="btn" onclick="downloadBackup()">${ICON.dl}Full backup (all data)</button></div>
+    <div class="bar" style="margin:0"><button class="btn" onclick="exportCSV(plants())">${ICON.xl}Plants (Excel / CSV)</button><button class="btn" onclick="downloadBackup()">${ICON.dl}Full backup (all data)</button>
+      <label class="btn" style="margin:0;font-size:14px;color:var(--ink)">${ICON.plus}Import data file<input type="file" accept=".json,application/json" hidden onchange="importData(this.files[0])"></label><span id="impMsg" class="small muted"></span></div>
     <p class="muted">Supabase free plan: the project pauses after 7 days with no use at all. Open the app at least once a week, or restore it from the Supabase dashboard with one click.</p></div>`;
   $("#sSave").onclick = async () => {
     const vals = {"Company Name": $("#sCo").value.trim(), "Locations": $("#sLoc").value.split("\n").map(l => l.split("=").map(x => x.trim())).filter(x => x[0]).map(x => `${x[0].toUpperCase()}=${x[1] || x[0]}`).join(";"),

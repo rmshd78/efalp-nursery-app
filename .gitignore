@@ -3,3 +3,4 @@ Thumbs.db
 *.xlsx
 # stock data must never be published (public repo)
 *data*.sql
+*starting_data*.json
