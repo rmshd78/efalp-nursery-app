@@ -732,7 +732,6 @@ function pPlants(v) {
     <span class="grow"></span>
     <button class="btn" id="bClear">Clear</button>
     <button class="btn" id="bCsv">${ICON.dl}Export</button>
-    <button class="btn" id="bLabels">${ICON.qr}QR labels</button>
   </div>
   <div id="plist"></div>`;
   const draw = () => {
@@ -768,7 +767,6 @@ function pPlants(v) {
   v.querySelectorAll("[data-fcol]").forEach(s => s.onchange = () => { st.f[s.dataset.fcol] = s.value; st.page = 0; draw(); });
   $("#bClear").onclick = () => { S.view.plants = null; pPlants(v); };
   $("#bCsv").onclick = () => exportCSV(st.sel.size ? plants().filter(p => st.sel.has(p[FIXED.barcode])) : filterPlants(st));
-  $("#bLabels").onclick = () => { S.labelList = (st.sel.size ? plants().filter(p => st.sel.has(p[FIXED.barcode])) : filterPlants(st)).map(p => p[FIXED.barcode]); location.hash = "#/labels"; };
   draw();
   if (st.q) { const i = $("#q"); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }
 }
@@ -889,14 +887,6 @@ function pPlant(v, b) {
       </div>
     </div>
     <div class="grid">
-      <div class="card qrbox"><h3>QR code</h3><div class="q">${qrSVG(qrText(p))}</div>
-        <div class="mono" style="margin-top:8px;font-weight:700">${esc(b)}</div>
-        <div class="noprint" style="margin-top:10px;display:flex;flex-direction:column;gap:6px">
-          <button class="btn" style="justify-content:center" onclick="downloadQR('${esc(b)}')">${ICON.dl}Download QR label</button>
-          <button class="btn" style="justify-content:center" onclick="printA4('${esc(b)}')">${ICON.print}Print / PDF label</button>
-          ${qrTreeLink(p) ? `<a class="small" href="${esc(qrTreeLink(p))}" target="_blank" rel="noopener">Open QR Tree page ↗</a>` : `<span class="small muted">No QR Tree link yet: this QR shows the plant details.</span>`}
-          <button class="btn sm" style="justify-content:center" onclick="showQRText('${esc(b)}')">What the QR shows</button>
-        </div></div>
       <div class="card small"><h3>Record</h3><dl class="dl" style="grid-template-columns:90px 1fr"><dt>Updated</dt><dd>${esc(p[FIXED.at] || "—")}</dd><dt>By</dt><dd>${esc(p[FIXED.by] || "—")}</dd></dl></div>
     </div>
   </div>`;
