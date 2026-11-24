@@ -6,10 +6,10 @@
 // =====================================================================
 window.EFALP_CONFIG = {
   // Supabase → Project Settings → API (or "Connect") → Project URL
-  supabaseUrl: "https://YOUR-PROJECT.supabase.co",
+  supabaseUrl: "https://ygvzqvlqvcmsthvwxifz.supabase.co",
 
   // Supabase → Project Settings → API Keys → "anon public" key  (or the "publishable" key)
-  supabaseKey: "PASTE-YOUR-ANON-OR-PUBLISHABLE-KEY-HERE",
+  supabaseKey: "sb_publishable_WV_4dl8dhv7rrDcVh21aBw_KAs_k8h_",
 
   // How often (seconds) the app checks for changes made by other users
   refreshSeconds: 5
