@@ -6,6 +6,8 @@
 <meta name="robots" content="noindex, nofollow">
 <title>EFALP Nurseries · Plant Management</title>
 <link rel="icon" href="logo.png">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital@0;1&family=Poppins:wght@400;500;700&display=swap">
 <style>
 :root{
   --g900:#0f4d2a;--g800:#146b3a;--g700:#1b7a3e;--g600:#2e9d4a;--g400:#8dc63f;--g100:#e8f4e4;--g50:#f4f8f2;
@@ -616,7 +618,8 @@ async function importData(file) {
   const msg = t => { const m = $("#impMsg"); if (m) m.textContent = t; };
   try {
     let j; try { j = JSON.parse(await file.text()); } catch (e) { throw new Error("This file can't be read. Choose EFALP_starting_data.json."); }
-    if (!j || !j.efalp_import || !Array.isArray(j.plants)) throw new Error("This is not an EFALP data file. Choose EFALP_starting_data.json.");
+    if (!j || !j.efalp_import || !(Array.isArray(j.plants) || Array.isArray(j.updates))) throw new Error("This is not an EFALP data file.");
+    j.plants = j.plants || [];
     const ign = {Prefer: "resolution=ignore-duplicates,return=minimal"};
     msg("Loading fields and settings…");
     if (j.fields && j.fields.length) await rest("fields?on_conflict=col", {method: "POST", body: j.fields, headers: ign});
@@ -625,8 +628,20 @@ async function importData(file) {
       msg(`Loading plants ${i + 1}–${Math.min(i + 100, j.plants.length)} of ${j.plants.length}…`);
       await rest("plants?on_conflict=barcode", {method: "POST", body: j.plants.slice(i, i + 100), headers: ign});
     }
-    await logActivity("Imported", "Database", `${j.plants.length} stock lines from ${file.name}`);
-    toast(`Imported ${j.plants.length} stock lines`); await loadAll(true); render();
+    let upd = 0, missing = 0;
+    if (Array.isArray(j.updates) && j.updates.length) {
+      await loadAll(true);
+      const byCode = {}; S.raw.plants.forEach(r => byCode[r.barcode] = r);
+      const todo = j.updates.filter(u => { if (byCode[u.barcode]) return true; missing++; return false; });
+      for (let i = 0; i < todo.length; i += 8) {
+        msg(`Updating plants ${i + 1}–${Math.min(i + 8, todo.length)} of ${todo.length}…`);
+        await Promise.all(todo.slice(i, i + 8).map(u => rest(`plants?barcode=eq.${enc(u.barcode)}`, {method: "PATCH", body: {data: Object.assign({}, byCode[u.barcode].data || {}, u.data || {})}})));
+        upd += Math.min(8, todo.length - i);
+      }
+    }
+    const what = [j.plants.length ? `${j.plants.length} stock lines added` : "", upd ? `${upd} plants updated` : "", missing ? `${missing} barcodes not found` : ""].filter(Boolean).join(", ");
+    await logActivity("Imported", "Database", `${what} from ${file.name}`);
+    toast(`Import done: ${what}`); msg(""); await loadAll(true); render();
   } catch (e) { msg(""); toast("Import failed: " + e.message, true); }
 }
 function pDashboard(v) {
@@ -774,7 +789,10 @@ function downloadBackup() {
    QR CODE
    ===================================================================== */
 function sizeSummary(p) { return S.bands.filter(b => num(p[b + " cm"]) > 0).map(b => `${b} cm (${fmt(num(p[b + " cm"]))})`).join(", "); }
+const qrLinkCol = () => (S.fields.find(f => /qr\s*tree\s*link|qr\s*link/i.test(f.col)) || {}).col;
+function qrTreeLink(p) { const c = qrLinkCol(); const v = c ? String(p[c] == null ? "" : p[c]).trim() : ""; return /^https?:\/\//i.test(v) ? v : ""; }
 function qrText(p) {
+  const tree = qrTreeLink(p); if (tree) return tree;
   const appUrl = (S.settings["App URL"] || "").trim();
   if (/link/i.test(S.settings["QR Content"] || "") && appUrl) return appUrl.replace(/[#/]*$/, "") + "/#/plant/" + encodeURIComponent(p[FIXED.barcode]);
   const lines = [S.settings["Company Name"] || "EFALP Nurseries", "Barcode: " + p[FIXED.barcode], "Location: " + locName(p[FIXED.location])];
@@ -783,26 +801,48 @@ function qrText(p) {
   lines.push("Total Qty: " + fmt(p._total));
   return lines.join("\n");
 }
-let logoImg = null;
-function loadLogo() { return logoImg ? Promise.resolve(logoImg) : new Promise(r => { const i = new Image(); i.onload = () => r(logoImg = i); i.onerror = () => r(null); i.src = "logo.png"; }); }
+let fontsReady = null;
+function loadLabelFonts() {
+  if (!fontsReady) fontsReady = Promise.all(["400 40px Lora", "italic 400 40px Lora", "500 20px Poppins", "700 20px Poppins"].map(f => document.fonts.load(f).catch(() => null))).catch(() => null);
+  return fontsReady;
+}
+function rrect(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+function fitFont(g, text, maxW, size, tpl) { let s = size; g.font = tpl(s); while (s > 12 && g.measureText(text).width > maxW) { s -= 2; g.font = tpl(s); } return s; }
+/* QR label in the EFALP template: dark green card, gold border, name left, QR + barcode pill right (A4 landscape) */
 async function qrLabelCanvas(p) {
-  const W = 720, H = 900, c = document.createElement("canvas"); c.width = W; c.height = H; const g = c.getContext("2d");
-  g.fillStyle = "#fff"; g.fillRect(0, 0, W, H);
-  const logo = await loadLogo(); if (logo) g.drawImage(logo, 30, 24, 96, 96);
-  const nameCol = (S.fields.find(f => /common/i.test(f.col)) || {}).col, varCol = (S.fields.find(f => /variety/i.test(f.col)) || {}).col;
-  g.fillStyle = "#146b3a"; g.font = "bold 38px Segoe UI, Arial"; g.fillText(S.settings["Company Name"] || "EFALP Nurseries", 146, 66);
-  g.fillStyle = "#4b5a50"; g.font = "24px Segoe UI, Arial"; g.fillText(locName(p[FIXED.location]), 146, 102);
-  const qc = qrCanvas(qrText(p), 600); g.imageSmoothingEnabled = false; g.drawImage(qc, 60, 140, 600, 600);
-  g.fillStyle = "#000"; g.textAlign = "center"; g.font = "bold 44px Consolas, monospace"; g.fillText(p[FIXED.barcode], W / 2, 795);
-  g.font = "28px Segoe UI, Arial"; g.fillStyle = "#333";
-  const sub = [nameCol && p[nameCol], varCol && p[varCol]].filter(Boolean).join(" · "); g.fillText(sub.length > 44 ? sub.slice(0, 43) + "…" : sub, W / 2, 845);
+  await loadLabelFonts();
+  const K = 2, W = 1308 * K, H = 924 * K, c = document.createElement("canvas"); c.width = W; c.height = H; const g = c.getContext("2d"); g.scale(K, K);
+  const DARK = "#0B2418", PANEL = "#143A24", GOLD = "#C9A84C";
+  const nameCol = (S.fields.find(f => /common/i.test(f.col)) || {}).col, botCol = (S.fields.find(f => /botanical/i.test(f.col)) || {}).col;
+  g.fillStyle = DARK; g.fillRect(0, 0, 1308, 924);
+  rrect(g, 30, 30, 1248, 864, 26); g.strokeStyle = GOLD; g.lineWidth = 1.2; g.stroke();
+  rrect(g, 55, 55, 1198, 814, 22); g.fillStyle = PANEL; g.fill(); g.lineWidth = 1.6; g.stroke();
+  g.beginPath(); g.moveTo(718, 130); g.lineTo(718, 793); g.strokeStyle = "rgba(201,168,76,.35)"; g.lineWidth = 1; g.stroke();
+  // left text
+  const nursery = locName(p[FIXED.location]).toUpperCase().split("").join(String.fromCharCode(8202));
+  g.fillStyle = GOLD; g.textBaseline = "alphabetic"; g.textAlign = "left";
+  fitFont(g, nursery, 560, 13, s => `500 ${s}px Poppins, Arial, sans-serif`); g.fillText(nursery, 124, 353);
+  const name = String((nameCol && p[nameCol]) || p[FIXED.barcode]);
+  g.fillStyle = "#FFFFFF"; fitFont(g, name, 560, 80, s => `400 ${s}px Lora, Georgia, serif`); g.fillText(name, 120, 448);
+  const bot = String((botCol && p[botCol]) || "");
+  if (bot) { g.fillStyle = GOLD; fitFont(g, bot, 560, 36, s => `italic 400 ${s}px Lora, Georgia, serif`); g.fillText(bot, 124, 500); }
+  g.fillStyle = GOLD; g.fillRect(124, 578, 156, 2);
+  // QR box
+  rrect(g, 777, 221, 388, 388, 18); g.fillStyle = "#FFFFFF"; g.fill(); g.strokeStyle = GOLD; g.lineWidth = 1.2; g.stroke();
+  const q = makeQR(qrText(p), "M"), n = q.getModuleCount(), area = 282, cell = area / n, ox = 830, oy = 274;
+  g.fillStyle = "#000000";
+  for (let r = 0; r < n; r++) for (let col = 0; col < n; col++) if (q.isDark(r, col)) g.fillRect(ox + col * cell, oy + r * cell, Math.ceil(cell * 100) / 100 + .35, Math.ceil(cell * 100) / 100 + .35);
+  // barcode pill
+  rrect(g, 808, 644, 326, 55, 27.5); g.fillStyle = GOLD; g.fill();
+  g.fillStyle = DARK; g.textAlign = "center"; g.textBaseline = "middle"; fitFont(g, p[FIXED.barcode], 290, 22, s => `700 ${s}px Poppins, Arial, sans-serif`); g.fillText(p[FIXED.barcode], 971, 672);
   return c;
 }
 async function downloadQR(b) {
   const p = plants().find(x => x[FIXED.barcode] === b); if (!p) return;
   const c = await qrLabelCanvas(p);
-  c.toBlob(bl => { const a = document.createElement("a"); a.href = URL.createObjectURL(bl); a.download = `QR_${b}.png`; a.click(); });
+  await new Promise(res => c.toBlob(bl => { const a = document.createElement("a"); a.href = URL.createObjectURL(bl); a.download = `${b}.png`; a.click(); res(); }, "image/png"));
 }
+function printA4(b) { S.labelList = [b]; S.labelMode = "a4"; location.hash = "#/labels"; }
 
 /* =====================================================================
    PLANT DETAIL
@@ -853,6 +893,8 @@ function pPlant(v, b) {
         <div class="mono" style="margin-top:8px;font-weight:700">${esc(b)}</div>
         <div class="noprint" style="margin-top:10px;display:flex;flex-direction:column;gap:6px">
           <button class="btn" style="justify-content:center" onclick="downloadQR('${esc(b)}')">${ICON.dl}Download QR label</button>
+          <button class="btn" style="justify-content:center" onclick="printA4('${esc(b)}')">${ICON.print}Print / PDF label</button>
+          ${qrTreeLink(p) ? `<a class="small" href="${esc(qrTreeLink(p))}" target="_blank" rel="noopener">Open QR Tree page ↗</a>` : `<span class="small muted">No QR Tree link yet: this QR shows the plant details.</span>`}
           <button class="btn sm" style="justify-content:center" onclick="showQRText('${esc(b)}')">What the QR shows</button>
         </div></div>
       <div class="card small"><h3>Record</h3><dl class="dl" style="grid-template-columns:90px 1fr"><dt>Updated</dt><dd>${esc(p[FIXED.at] || "—")}</dd><dt>By</dt><dd>${esc(p[FIXED.by] || "—")}</dd></dl></div>
@@ -1068,19 +1110,43 @@ function pLabels(v) {
   setTitle("QR Labels");
   const codes = S.labelList && S.labelList.length ? S.labelList : null;
   const list = codes ? plants().filter(p => codes.includes(p[FIXED.barcode])) : [];
+  const mode = S.labelMode || "a4", maxA4 = 120;
   const nameCol = (S.fields.find(f => /common/i.test(f.col)) || {}).col, varCol = (S.fields.find(f => /variety/i.test(f.col)) || {}).col;
+  let ps = document.getElementById("printPage"); if (!ps) { ps = document.createElement("style"); ps.id = "printPage"; document.head.appendChild(ps); }
+  ps.textContent = mode === "a4" ? "@media print{@page{size:A4 landscape;margin:0}.a4{width:297mm;height:209mm;page-break-after:always;display:block}.a4 img{width:100%;height:100%;object-fit:contain;border:0!important;box-shadow:none!important}.a4wrap{display:block!important}}" : "";
   v.innerHTML = `<div class="bar noprint">
     <div class="search">${ICON.search}<input class="in" id="lq" placeholder="Type barcodes or a plant name, e.g. Mango or ALRH-COCA"></div>
     <select class="in" id="lLoc"><option value="">All locations</option>${S.locations.map(l => `<option value="${esc(l.code)}">${esc(l.name)}</option>`).join("")}</select>
     <button class="btn" id="lFind">Select</button>
-    <button class="btn pri" onclick="window.print()" ${list.length ? "" : "disabled"}>${ICON.print}Print ${list.length} labels</button>
+    <select class="in" id="lMode" style="width:auto"><option value="a4" ${mode === "a4" ? "selected" : ""}>EFALP template (1 per A4 page)</option><option value="sheet" ${mode === "sheet" ? "selected" : ""}>Small labels (many per page)</option></select>
+    <button class="btn pri" id="lPrint" disabled>${ICON.print}Print / Save as PDF</button>
     ${list.length ? `<button class="btn" id="lZip">${ICON.dl}Download PNGs</button>` : ""}
   </div>
-  <p class="small muted noprint">${list.length ? `${list.length} labels ready. Tip: in the Plant Master, filter or tick plants and press <b>QR labels</b>.` : "Choose which plants to print: search above, or filter / tick plants in the Plant Master and press <b>QR labels</b>."}</p>
-  <div class="labels">${list.slice(0, 600).map(p => `<div class="label"><div class="q">${qrSVG(qrText(p), {margin: 1})}</div><div><img class="lg" src="logo.png" alt=""><b class="mono">${esc(p[FIXED.barcode])}</b>${esc(p[nameCol] || "")}<br><span class="muted">${esc(p[varCol] || "")}</span><br>${esc(locName(p[FIXED.location]))}</div></div>`).join("")}</div>`;
+  <p class="small muted noprint">${list.length ? `${list.length} label(s)${mode === "a4" && list.length > maxA4 ? ` (showing the first ${maxA4}, print in smaller groups)` : ""}. To make a PDF, press <b>Print / Save as PDF</b> and choose <b>Save as PDF</b> as the printer.` : "Choose which plants to print: search above, or filter / tick plants in the Plant Master and press <b>QR labels</b>."}</p>
+  <div id="lOut"></div>`;
+  const out = $("#lOut");
+  if (mode === "sheet") {
+    out.innerHTML = `<div class="labels">${list.slice(0, 600).map(p => `<div class="label"><div class="q">${qrSVG(qrText(p), {margin: 1})}</div><div><img class="lg" src="logo.png" alt=""><b class="mono">${esc(p[FIXED.barcode])}</b>${esc(p[nameCol] || "")}<br><span class="muted">${esc(p[varCol] || "")}</span><br>${esc(locName(p[FIXED.location]))}</div></div>`).join("")}</div>`;
+    if (list.length) $("#lPrint").disabled = false;
+  } else if (list.length) {
+    out.innerHTML = `<div class="a4wrap" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px"></div><p class="small muted noprint" id="lProg">Preparing labels…</p>`;
+    const wrap = out.querySelector(".a4wrap"), todo = list.slice(0, maxA4);
+    (async () => {
+      for (let i = 0; i < todo.length; i++) {
+        if (!document.body.contains(wrap)) return;
+        const cv = await qrLabelCanvas(todo[i]); const d = document.createElement("div"); d.className = "a4";
+        d.innerHTML = `<img src="${cv.toDataURL("image/jpeg", 0.92)}" alt="${esc(todo[i][FIXED.barcode])}" style="width:100%;border-radius:8px;box-shadow:var(--shadow)">`; wrap.appendChild(d);
+        const pr = $("#lProg"); if (pr) pr.textContent = `Preparing labels… ${i + 1} of ${todo.length}`;
+        if (i % 4 === 3) await sleep(0);
+      }
+      const pr = $("#lProg"); if (pr) pr.remove(); const pb = $("#lPrint"); if (pb) pb.disabled = false;
+    })();
+  }
+  $("#lPrint").onclick = () => window.print();
+  $("#lMode").onchange = e => { S.labelMode = e.target.value; pLabels(v); };
   $("#lFind").onclick = () => { S.view.plants = null; S.labelList = filterPlants({q: $("#lq").value, loc: $("#lLoc").value, f: {}}).map(p => p[FIXED.barcode]); pLabels(v); };
   $("#lq").onkeydown = e => { if (e.key === "Enter") $("#lFind").click(); };
-  if ($("#lZip")) $("#lZip").onclick = async () => { if (list.length > 30 && !confirm(`Download ${list.length} PNG files one by one?`)) return; for (const p of list) { await downloadQR(p[FIXED.barcode]); await sleep(350); } };
+  if ($("#lZip")) $("#lZip").onclick = async () => { if (list.length > 30 && !confirm(`Download ${list.length} PNG files one by one?`)) return; for (const p of list) { await downloadQR(p[FIXED.barcode]); await sleep(400); } };
 }
 
 /* =====================================================================
