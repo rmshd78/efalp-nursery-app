@@ -11,10 +11,15 @@ create table if not exists public.profiles (
   id          uuid primary key references auth.users(id) on delete cascade,
   email       text not null,
   name        text,
-  role        text not null default 'pending' check (role in ('superadmin','manager','engineer','pending')),
+  role        text not null default 'pending' check (role in ('superadmin','manager','engineer','viewer','pending')),
   active      boolean not null default true,
   created_at  timestamptz not null default now()
 );
+
+-- allowed roles (re-applied so older databases get the Viewer role too)
+alter table public.profiles drop constraint if exists profiles_role_check;
+alter table public.profiles add constraint profiles_role_check
+  check (role in ('superadmin','manager','engineer','viewer','pending'));
 
 create table if not exists public.settings (
   key   text primary key,
@@ -80,6 +85,12 @@ on conflict do nothing;
 create or replace function public.my_role() returns text
 language sql stable security definer set search_path = public as $$
   select role from public.profiles where id = auth.uid() and active and role <> 'pending'
+$$;
+
+-- true for roles that may add / edit (everyone except Viewer)
+create or replace function public.can_edit() returns boolean
+language sql stable security definer set search_path = public as $$
+  select coalesce(public.my_role() in ('superadmin','manager','engineer'), false)
 $$;
 
 -- every new sign-up gets a profile: the very first one is Super Admin, the rest wait for approval
@@ -168,26 +179,26 @@ create policy efalp_fields_write   on public.fields   for all    to authenticate
 
 -- plants: all staff read/add/edit; Super Admin & Manager delete
 create policy efalp_plants_read   on public.plants for select to authenticated using (public.my_role() is not null);
-create policy efalp_plants_insert on public.plants for insert to authenticated with check (public.my_role() is not null);
-create policy efalp_plants_update on public.plants for update to authenticated using (public.my_role() is not null) with check (public.my_role() is not null);
+create policy efalp_plants_insert on public.plants for insert to authenticated with check (public.can_edit());
+create policy efalp_plants_update on public.plants for update to authenticated using (public.can_edit()) with check (public.can_edit());
 create policy efalp_plants_delete on public.plants for delete to authenticated using (public.my_role() in ('superadmin','manager'));
 
 -- reports: all staff read/add; Super Admin & Manager (or the author) delete
 create policy efalp_reports_read   on public.reports for select to authenticated using (public.my_role() is not null);
-create policy efalp_reports_insert on public.reports for insert to authenticated with check (public.my_role() is not null);
+create policy efalp_reports_insert on public.reports for insert to authenticated with check (public.can_edit());
 create policy efalp_reports_update on public.reports for update to authenticated using (public.my_role() in ('superadmin','manager'));
 create policy efalp_reports_delete on public.reports for delete to authenticated
-  using (public.my_role() in ('superadmin','manager') or (public.my_role() is not null and created_by_id = auth.uid()));
+  using (public.my_role() in ('superadmin','manager') or (public.can_edit() and created_by_id = auth.uid()));
 
 -- activity log & sync state
 create policy efalp_activity_read   on public.activity   for select to authenticated using (public.my_role() is not null);
-create policy efalp_activity_insert on public.activity   for insert to authenticated with check (public.my_role() is not null);
+create policy efalp_activity_insert on public.activity   for insert to authenticated with check (public.can_edit());
 create policy efalp_sync_read       on public.sync_state for select to authenticated using (public.my_role() is not null);
 
 grant usage on schema public to authenticated;
 grant select, insert, update, delete on all tables in schema public to authenticated;
 grant usage, select on all sequences in schema public to authenticated;
-grant execute on function public.my_role(), public.remove_field_data(text) to authenticated;
+grant execute on function public.my_role(), public.can_edit(), public.remove_field_data(text) to authenticated;
 revoke all on all tables in schema public from anon;
 
 -- ---------- photo storage ----------
@@ -198,7 +209,7 @@ drop policy if exists efalp_photos_read   on storage.objects;
 drop policy if exists efalp_photos_insert on storage.objects;
 drop policy if exists efalp_photos_delete on storage.objects;
 create policy efalp_photos_read   on storage.objects for select to authenticated using (bucket_id = 'photos' and public.my_role() is not null);
-create policy efalp_photos_insert on storage.objects for insert to authenticated with check (bucket_id = 'photos' and public.my_role() is not null);
-create policy efalp_photos_delete on storage.objects for delete to authenticated using (bucket_id = 'photos' and public.my_role() is not null);
+create policy efalp_photos_insert on storage.objects for insert to authenticated with check (bucket_id = 'photos' and public.can_edit());
+create policy efalp_photos_delete on storage.objects for delete to authenticated using (bucket_id = 'photos' and public.can_edit());
 
 -- Done. Next: run 2_data.sql to load the 354 stock lines.

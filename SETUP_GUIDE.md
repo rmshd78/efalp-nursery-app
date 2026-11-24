@@ -69,15 +69,17 @@ Setup takes about 15 minutes and has 5 steps.
 
 The database enforces these rules, not just the app.
 
-| Action | Super Admin | Manager | Engineer |
-|---|:-:|:-:|:-:|
-| Dashboard, Plant Master search, QR codes, labels | ✓ | ✓ | ✓ |
-| Add & edit plants, update stock quantities | ✓ | ✓ | ✓ |
-| Add photo reports (and delete their own) | ✓ | ✓ | ✓ |
-| Delete plants and any report | ✓ | ✓ | – |
-| Activity log | ✓ | ✓ | – |
-| Add / edit / delete **fields** | ✓ | – | – |
-| Approve users, change roles, settings | ✓ | – | – |
+| Action | Super Admin | Manager | Engineer | Viewer |
+|---|:-:|:-:|:-:|:-:|
+| Dashboard, Plant Master search, QR codes, labels, export | ✓ | ✓ | ✓ | ✓ |
+| Add & edit plants, update stock quantities | ✓ | ✓ | ✓ | – |
+| Add photo reports (and delete their own) | ✓ | ✓ | ✓ | – |
+| Delete plants and any report | ✓ | ✓ | – | – |
+| Activity log | ✓ | ✓ | – | – |
+| Add / edit / delete **fields** | ✓ | – | – | – |
+| Approve users, change roles, settings | ✓ | – | – | – |
+
+> Databases set up before the Viewer role existed: run [`supabase/2_add_viewer_role.sql`](supabase/2_add_viewer_role.sql) once in the SQL Editor.
 
 ## Main features
 

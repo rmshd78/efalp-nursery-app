@@ -225,11 +225,12 @@ table.t td.num,table.t th.num{text-align:right;font-variant-numeric:tabular-nums
    ===================================================================== */
 const CFG = Object.assign({refreshSeconds: 5}, window.EFALP_CONFIG || {});
 const FIXED = {barcode: "Barcode", location: "Location", total: "Total Qty", by: "Updated By", at: "Updated At"};
-const ROLES = {superadmin: "Super Admin", manager: "Manager", engineer: "Engineer"};
+const ROLES = {superadmin: "Super Admin", manager: "Manager", engineer: "Engineer", viewer: "Viewer"};
 const CAN = {
   superadmin: {edit: 1, del: 1, report: 1, delReport: 1, fields: 1, users: 1, settings: 1, activity: 1},
   manager:    {edit: 1, del: 1, report: 1, delReport: 1, activity: 1},
-  engineer:   {edit: 1, report: 1}
+  engineer:   {edit: 1, report: 1},
+  viewer:     {}
 };
 const S = {me: null, role: null, tables: {}, fields: [], settings: {}, locations: [], bands: [], health: [],
   photos: {}, ids: {}, view: {}, lastSync: null, sig: {}, editing: false, tick: 0};
@@ -1163,7 +1164,7 @@ function pUsers(v) {
   v.innerHTML = `
   ${pend.length ? `<div class="card" style="margin-bottom:16px;border-color:#f3dcae;background:#fffaf0"><h3>Waiting for approval <small>${pend.length}</small></h3>
     <table class="t" style="background:transparent"><tbody>${pend.map(u => `<tr style="cursor:default"><td><b>${esc(u.Name)}</b><div class="small muted">${esc(u.Email)} · signed up ${esc(u.created)}</div></td>
-    <td style="text-align:right;white-space:nowrap"><button class="btn sm pri" onclick="setRole('${u.id}','engineer')">Approve as Engineer</button> <button class="btn sm" onclick="setRole('${u.id}','manager')">as Manager</button> <button class="btn sm danger" onclick="removeUser('${u.id}')">Reject</button></td></tr>`).join("")}</tbody></table></div>` : ""}
+    <td style="text-align:right;white-space:nowrap"><button class="btn sm pri" onclick="setRole('${u.id}','engineer')">Approve as Engineer</button> <button class="btn sm" onclick="setRole('${u.id}','manager')">as Manager</button> <button class="btn sm" onclick="setRole('${u.id}','viewer')">as Viewer</button> <button class="btn sm danger" onclick="removeUser('${u.id}')">Reject</button></td></tr>`).join("")}</tbody></table></div>` : ""}
   <div class="bar"><div class="grow small muted">To add a person: send them the app link <b class="mono">${esc(url)}</b>. They press <b>Create account</b>, then appear here for you to approve.</div>
     <button class="btn" onclick="navigator.clipboard.writeText('${esc(url)}').then(()=>toast('Link copied'))">Copy app link</button></div>
   <div class="tablewrap"><table class="t"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th></th></tr></thead><tbody>
@@ -1171,8 +1172,8 @@ function pUsers(v) {
   <td style="white-space:nowrap;text-align:right"><button class="btn sm" onclick="userModal('${u.id}')">Edit</button></td></tr>`).join("")}
   </tbody></table></div>
   <div class="card small" style="margin-top:16px"><h3>What each role can do</h3>
-  <table class="t"><thead><tr><th>Action</th><th>Super Admin</th><th>Manager</th><th>Engineer</th></tr></thead><tbody>
-  ${[["View dashboard, plants, reports, QR codes", 1, 1, 1], ["Add & edit plants, update stock quantities", 1, 1, 1], ["Add photo reports", 1, 1, 1], ["Delete plants & any report", 1, 1, 0], ["View activity log", 1, 1, 0], ["Add / change fields & columns", 1, 0, 0], ["Approve users, change roles, settings", 1, 0, 0]].map(r => `<tr style="cursor:default"><td>${r[0]}</td>${r.slice(1).map(x => `<td>${x ? "✓" : "—"}</td>`).join("")}</tr>`).join("")}
+  <table class="t"><thead><tr><th>Action</th><th>Super Admin</th><th>Manager</th><th>Engineer</th><th>Viewer</th></tr></thead><tbody>
+  ${[["View dashboard, plants, reports, QR codes, export", 1, 1, 1, 1], ["Add & edit plants, update stock quantities", 1, 1, 1, 0], ["Add photo reports", 1, 1, 1, 0], ["Delete plants & any report", 1, 1, 0, 0], ["View activity log", 1, 1, 0, 0], ["Add / change fields & columns", 1, 0, 0, 0], ["Approve users, change roles, settings", 1, 0, 0, 0]].map(r => `<tr style="cursor:default"><td>${r[0]}</td>${r.slice(1).map(x => `<td>${x ? "✓" : "—"}</td>`).join("")}</tr>`).join("")}
   </tbody></table><p class="muted" style="margin:10px 0 0">These rules are enforced by the database itself, not only by the app.</p></div>`;
 }
 async function setRole(id, role) {
