@@ -577,13 +577,13 @@ async function signOut() {
 function route() { const h = (location.hash || "#/dashboard").slice(2).split("?")[0].split("/"); return {page: h[0] || "dashboard", arg: decodeURIComponent(h.slice(1).join("/"))}; }
 function nav() {
   const r = route().page, items = [
-    ["dashboard", "Dashboard", ICON.dash], ["plants", "Plant Master", ICON.plant], ["reports", "Photo Reports", ICON.cam], ["labels", "QR Labels", ICON.qr]];
+    ["dashboard", "Dashboard", ICON.dash], ["plants", "Plant Master", ICON.plant], ["reports", "Photo Reports", ICON.cam]];
   const admin = [];
   if (can("fields")) admin.push(["fields", "Fields & Columns", ICON.cols]);
   if (can("users")) { const pend = (S.tables.Users || {rows: []}).rows.filter(u => u.role === "pending").length; admin.push(["users", "Users" + (pend ? ` <span class="pill h-Weak" style="margin-left:auto">${pend}</span>` : ""), ICON.users]); }
   if (can("activity")) admin.push(["activity", "Activity Log", ICON.log]);
   if (can("settings")) admin.push(["settings", "Settings", ICON.gear]);
-  const a = ([k, l, i]) => `<a href="#/${k}" class="${r === k || (k === "plants" && ["plant", "new", "edit"].includes(r)) ? "on" : ""}">${i}${l}</a>`;
+  const a = ([k, l, i]) => `<a href="#/${k}" class="${r === k || (k === "plants" && ["plant", "new", "edit", "labels"].includes(r)) ? "on" : ""}">${i}${l}</a>`;
   $("#nav").innerHTML = items.map(a).join("") + (admin.length ? `<div class="sep">Admin</div>` + admin.map(a).join("") : "") +
     `<div class="sep">Data</div><a href="#" onclick="exportCSV(plants());return false">${ICON.xl}Export all plants (Excel)</a>` +
     (can("settings") ? `<a href="#" onclick="downloadBackup();return false">${ICON.dl}Full backup</a>` : "");
