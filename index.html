@@ -677,9 +677,6 @@ function pDashboard(v) {
     <div class="card"><h3>Top 10 plants by quantity</h3>${hbars(top.map(e => [e[0], e[1], `#/plants?q=${encodeURIComponent(e[0])}`]))}</div>
     <div class="card"><h3>By plant typology</h3>${hbars(typ)}</div>
   </div>
-  <div class="card" style="margin-top:16px"><h3>Stock by plant size <small>number of plants per height band (cm)</small></h3>
-    <div class="vbars">${bandTot.map(([b, q]) => `<div class="col" title="${b} cm: ${fmt(q)} plants"><span>${q ? fmt(q) : ""}</span><div class="f" style="height:${(q / bmax * 100).toFixed(1)}%"></div></div>`).join("")}</div>
-    <div class="vlabels">${bandTot.map(([b]) => `<span>${b}</span>`).join("")}</div></div>
   <div class="grid g2" style="margin-top:16px">
     <div class="card"><h3>Recent photo reports</h3>${recent.length ? `<div class="pgrid">${recent.map(r => `<div class="pc" onclick="location.hash='#/plant/${encodeURIComponent(r.Barcode)}'"><img data-ph="${esc(r._photos[0])}" alt=""><div><b>${esc(r.Barcode)}</b><br><span class="pill h-${esc(r.Health)}">${esc(r.Health)}</span> <span class="muted">${esc(r.Date)} · ${esc(r["Created By"])}</span></div></div>`).join("")}</div>` : `<div class="empty">No photos yet.</div>`}</div>
     <div class="card"><h3>Recent activity</h3>${act.length ? `<table class="t"><tbody>${act.map(a => `<tr style="cursor:default"><td class="small muted" style="white-space:nowrap">${esc(excelDate(a.Time))}</td><td><b>${esc(a.User)}</b> ${esc(String(a.Action).toLowerCase())} <span class="mono">${esc(a.Target)}</span><div class="small muted">${esc(String(a.Details).slice(0, 120))}</div></td></tr>`).join("")}</tbody></table>` : `<div class="empty">No activity yet.</div>`}</div>
